@@ -20,18 +20,23 @@ public class CameraController : MonoBehaviour
         cameraRef = GetComponent<Camera>();
         newCamPos = cameraRef.transform.position;
 
-        edge.x = Screen.width * 0.35f;
-        edge.width = Screen.width * 0.3f;
-        edge.y = Screen.height * 0.35f;
-        edge.height = Screen.height * 0.3f;
+        edge.x = Screen.width * 0.2f;
+        edge.width = Screen.width * 0.6f;
+        edge.y = Screen.height * 0.2f;
+        edge.height = Screen.height * 0.6f;
     }
 
-    void LateUpdate()
+    void Update()
     {
         if (cameraRef != null)
         {
             mouseX = Input.mousePosition.x;
             mouseY = Input.mousePosition.y;
+
+            if (mouseY > Screen.height * 1.2) // cheat out of screen, I'm working in editor
+            {
+                return;
+            }
 
             Debug.LogFormat("MouseX = {0}, MouseY = {1}", Input.mousePosition.x, Input.mousePosition.y);
 
