@@ -10,6 +10,7 @@ public enum Direction
 
 public class ElevatorController : MonoBehaviour
 {
+    [ShowOnly]
     [SerializeField]
     private Vector3 curDestination;
     [SerializeField]
@@ -37,5 +38,15 @@ public class ElevatorController : MonoBehaviour
     public void SetDirection(Direction d)
     {
         direction = d;
+    }
+
+    public void Stop()
+    {
+
+    }
+
+    public void Move(Direction d)
+    {
+
     }
 }

@@ -7,7 +7,8 @@ public delegate void OnFloorRequestCallback(FloorRequest request);
 
 public class FloorController : MonoBehaviour
 {
-    [ShowOnly]
+    [ShowOnly] 
+	[SerializeField]
     private uint floorLevel;
 
     [SerializeField]

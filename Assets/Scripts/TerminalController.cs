@@ -11,6 +11,9 @@ public class TerminalController : MonoBehaviour
     [SerializeField]
     GameObject pfFloor;
 
+    [SerializeField]
+    ElevatorController elevatorController;
+
     Dictionary<uint, FloorController> dictFloor;
 
     // Start is called before the first frame update
