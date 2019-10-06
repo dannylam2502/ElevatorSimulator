@@ -31,6 +31,20 @@ public class TerminalController : MonoBehaviour
                 dictFloor.Add(floorLevel, component);
             }
         }
+
+        // Prevent top floor going up
+        FloorController topFloor = GetFloorController(numFloor);
+        if (topFloor)
+        {
+            topFloor.SetDirectionInteractable(false, Direction.Up);
+        }
+
+        // Prevent bottom floor going down
+        FloorController bottomFloor = GetFloorController(1);
+        if (bottomFloor)
+        {
+            bottomFloor.SetDirectionInteractable(false, Direction.Down);
+        }
     }
 
     // Update is called once per frame

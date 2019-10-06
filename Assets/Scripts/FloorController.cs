@@ -40,6 +40,18 @@ public class FloorController : MonoBehaviour
         return floorLevel;
     }
 
+    public void SetDirectionInteractable(bool enable, Direction direction)
+    {
+        if (direction == Direction.Down)
+        {
+            btnDown.interactable = enable;
+        }
+        else if (direction == Direction.Up)
+        {
+            btnUp.interactable = enable;
+        }
+    }
+
     public void OnClickBtnUp()
     {
         SendRequest(Direction.Up);
@@ -70,14 +82,7 @@ public class FloorController : MonoBehaviour
     {
         if (response.resultCode == ResultCode.FloorRequestSucceed)
         {
-            if (response.direction == Direction.Up)
-            {
-                btnUp.interactable = false;
-            }
-            else if (response.direction == Direction.Down)
-            {
-                btnDown.interactable = false;
-            }
+            SetDirectionInteractable(false, response.direction);
         }
     }
 }
