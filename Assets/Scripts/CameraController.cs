@@ -38,7 +38,7 @@ public class CameraController : MonoBehaviour
                 return;
             }
 
-            Debug.LogFormat("MouseX = {0}, MouseY = {1}", Input.mousePosition.x, Input.mousePosition.y);
+            //Debug.LogFormat("MouseX = {0}, MouseY = {1}", Input.mousePosition.x, Input.mousePosition.y);
 
             if (mouseX < edge.x)
             {

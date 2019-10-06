@@ -11,17 +11,24 @@ public class TerminalController : MonoBehaviour
     [SerializeField]
     GameObject pfFloor;
 
+    Dictionary<uint, FloorController> dictFloor;
+
     // Start is called before the first frame update
     void Start()
     {
         uint numFloor = 100;
+        dictFloor = new Dictionary<uint, FloorController>(100);
+
         for (uint i = 0; i < numFloor; i++)
         {
             GameObject floor = Instantiate(pfFloor, floorLayout.transform);
             FloorController component = floor.GetComponent<FloorController>();
             if (component)
             {
+                uint floorLevel = numFloor - i;
                 component.SetFloorLevel(numFloor - i);
+                component.SetFloorRequestCallback(OnGetFloorRequest);
+                dictFloor.Add(floorLevel, component);
             }
         }
     }
@@ -30,5 +37,42 @@ public class TerminalController : MonoBehaviour
     void Update()
     {
         
+    }
+
+    void OnGetFloorRequest(FloorRequest rq)
+    {
+        HandleFloorRequest(rq);
+    }
+
+    void HandleFloorRequest(FloorRequest rq)
+    {
+        // handle it
+
+        // Send Response
+        FloorResponse rs = new FloorResponse();
+        rs.level = rq.level;
+        rs.direction = rq.direction;
+        rs.resultCode = ResultCode.FloorRequestSucceed;
+
+        SendFloorResponse(rs);
+        Logger.Log(Logger.kTagRes, JsonUtility.ToJson(rs));
+    }
+
+    void SendFloorResponse(FloorResponse rs)
+    {
+        FloorController component = GetFloorController(rs.level);
+        if (component)
+        {
+            component.OnGetResponse(rs);
+        }
+    }
+
+    FloorController GetFloorController(uint level)
+    {
+        if (dictFloor.ContainsKey(level))
+        {
+            return dictFloor[level];
+        }
+        return null;
     }
 }
