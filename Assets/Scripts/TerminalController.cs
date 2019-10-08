@@ -6,13 +6,13 @@ using UnityEngine.UI;
 public class TerminalController : MonoBehaviour
 {
     [SerializeField]
-    VerticalLayoutGroup floorLayout;
-
+    VerticalLayoutGroup layoutFloor;
     [SerializeField]
     GameObject pfFloor;
-
     [SerializeField]
     ElevatorController elevatorController;
+
+    ElevatorInterfaceController elevatorInterfaceController;
 
     Dictionary<uint, FloorController> dictFloor;
 
@@ -24,7 +24,7 @@ public class TerminalController : MonoBehaviour
 
         for (uint i = 0; i < numFloor; i++)
         {
-            GameObject floor = Instantiate(pfFloor, floorLayout.transform);
+            GameObject floor = Instantiate(pfFloor, layoutFloor.transform);
             FloorController component = floor.GetComponent<FloorController>();
             if (component)
             {
@@ -84,6 +84,11 @@ public class TerminalController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Get FloorController by level, return null if key not found
+    /// </summary>
+    /// <param name="level">key floor level</param>
+    /// <returns></returns>
     FloorController GetFloorController(uint level)
     {
         if (dictFloor.ContainsKey(level))
@@ -91,5 +96,19 @@ public class TerminalController : MonoBehaviour
             return dictFloor[level];
         }
         return null;
+    }
+
+    public void SetElevatorInterface(ElevatorInterfaceController elevatorInterface)
+    {
+        elevatorInterfaceController = elevatorInterface;
+    }
+
+    // Click to elevator to open the interface
+    public void OnClickElevator()
+    {
+        if (elevatorInterfaceController)
+        {
+            elevatorInterfaceController.Show();
+        }
     }
 }

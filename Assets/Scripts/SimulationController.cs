@@ -11,6 +11,9 @@ public class SimulationController : MonoBehaviour
     [SerializeField]
     GameObject pfTerminal;
 
+    [SerializeField]
+    ElevatorInterfaceController elevatorInterfaceController;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -22,8 +25,13 @@ public class SimulationController : MonoBehaviour
         uint numTerminal = 10;
         for (uint i = 0; i < numTerminal; i++)
         {
-            GameObject floor = Instantiate(pfTerminal, terminalLayout.transform);
-            floor.name = "Terminal" + i.ToString();
+            GameObject terminal = Instantiate(pfTerminal, terminalLayout.transform);
+            terminal.name = "Terminal" + i.ToString();
+            TerminalController component = terminal.GetComponent<TerminalController>();
+            if (component)
+            {
+                component.SetElevatorInterface(elevatorInterfaceController);
+            }
             yield return new WaitForSeconds(0.2f);
         }
     }
