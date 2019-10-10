@@ -4,8 +4,8 @@ using UnityEngine;
 
 public class GameConfig : MonoBehaviour
 {
-    public static uint NumFloor = 2;
-    public static uint NumElevator = 1;
+    public static uint NumFloor = 100;
+    public static uint NumElevator = 10;
     // Start is called before the first frame update
     void Start()
     {
@@ -22,5 +22,15 @@ public class GameConfig : MonoBehaviour
     {
         NumFloor = numFloor;
         NumElevator = numElevator;
+    }
+
+    public static uint GetTopFloor()
+    {
+        return NumFloor;
+    }
+
+    public static uint GetBottomFloor()
+    {
+        return 1;
     }
 }

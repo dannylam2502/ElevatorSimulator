@@ -2,12 +2,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum Direction
-{
-    Up,
-    Down
-}
-
 public class ElevatorController : MonoBehaviour
 {
     [ShowOnly]

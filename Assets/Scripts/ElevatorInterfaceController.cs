@@ -74,7 +74,7 @@ public class ElevatorInterfaceController : MonoBehaviour
 
     public void OnGetCallResponse(CallResponse response)
     {
-        if (response.resultCode == ResultCode.CallRequestSucceed)
+        if (response.resultCode == ResultCode.CallRequestSucceeded)
         {
             CallButtonController controller = GetButtonController(response.levelRequested);
             if (controller)

@@ -10,8 +10,8 @@ public enum ResultCode
 {
     None,
     Failed,
-    FloorRequestSucceed,
-    CallRequestSucceed
+    FloorRequestSucceeded,
+    CallRequestSucceeded
 }
 
 public class GameDTO
@@ -30,8 +30,7 @@ public class FloorRequest
 public class FloorResponse
 {
     public ResultCode resultCode;
-    public uint level;
-    public Direction direction;
+    public FloorData floorData;
 }
 
 [SerializeField]

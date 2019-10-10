@@ -5,10 +5,6 @@ using UnityEngine.UI;
 
 public class FloorController : MonoBehaviour
 {
-    [ShowOnly] 
-	[SerializeField]
-    private uint floorLevel;
-
     [SerializeField]
     Text txtFloorLevel;
     [SerializeField]
@@ -16,7 +12,12 @@ public class FloorController : MonoBehaviour
     [SerializeField]
     Button btnDown;
 
+    FloorData floorData;
+
     OnFloorRequestCallback onFloorRequestCallback;
+
+    public static Color CannotBeUsedColor = Color.grey;
+    public static Color CanBeUsedColor = Color.white;
     // Start is called before the first frame update
     void Start()
     {
@@ -28,27 +29,55 @@ public class FloorController : MonoBehaviour
         
     }
 
-    public void SetFloorLevel(uint level)
+    public void SetFloorData(FloorData data)
     {
-        floorLevel = level;
-        txtFloorLevel.text = floorLevel.ToString();
+        floorData = data;
     }
 
-    public uint GetFloorLevel()
+    public void UpdateUI()
     {
-        return floorLevel;
-    }
+        btnUp.image.color = CannotBeUsedColor;
+        btnDown.image.color = CannotBeUsedColor;
+        switch (floorData.requestableDirection)
+        {
+            case Direction.None:
+                break;
+            case Direction.Up:
+                btnUp.image.color = CanBeUsedColor;
+                break;
+            case Direction.Down:
+                btnDown.image.color = CanBeUsedColor;
+                break;
+            case Direction.Both:
+                btnUp.image.color = CanBeUsedColor;
+                btnDown.image.color = CanBeUsedColor;
+                break;
+            default:
+                break;
+        }
 
-    public void SetDirectionInteractable(bool enable, Direction direction)
-    {
-        if (direction == Direction.Down)
+        btnUp.interactable = true;
+        btnDown.interactable = true;
+
+        switch (floorData.status)
         {
-            btnDown.interactable = enable;
+            case FloorStatus.Waiting:
+                break;
+            case FloorStatus.RequestingUp:
+                btnUp.interactable = false;
+                break;
+            case FloorStatus.RequestingDown:
+                btnDown.interactable = false;
+                break;
+            case FloorStatus.RequestingUpAndDown:
+                btnUp.interactable = false;
+                btnDown.interactable = false;
+                break;
+            default:
+                break;
         }
-        else if (direction == Direction.Up)
-        {
-            btnUp.interactable = enable;
-        }
+
+        txtFloorLevel.text = floorData.level.ToString();
     }
 
     public void OnClickBtnUp()
@@ -64,7 +93,7 @@ public class FloorController : MonoBehaviour
     void SendRequest(Direction d)
     {
         FloorRequest rq = new FloorRequest();
-        rq.level = floorLevel;
+        rq.level = floorData.level;
         rq.direction = d;
 
         onFloorRequestCallback?.Invoke(rq);
@@ -79,9 +108,10 @@ public class FloorController : MonoBehaviour
 
     public void OnGetResponse(FloorResponse response)
     {
-        if (response.resultCode == ResultCode.FloorRequestSucceed)
+        if (response.resultCode == ResultCode.FloorRequestSucceeded)
         {
-            SetDirectionInteractable(false, response.direction);
+            floorData = response.floorData;
+            UpdateUI();
         }
     }
 }

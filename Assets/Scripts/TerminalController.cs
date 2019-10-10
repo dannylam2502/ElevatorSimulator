@@ -14,39 +14,41 @@ public class TerminalController : MonoBehaviour
 
     ElevatorInterfaceController elevatorInterfaceController;
 
+    // cached ref of floor controller component
     Dictionary<uint, FloorController> dictFloor;
+
+    Dictionary<uint, FloorData> floorData;
+    ElevatorData elevatorData;
+
+    private void Awake()
+    {
+        floorData = new Dictionary<uint, FloorData>();
+        for (uint i = 0; i < GameConfig.NumFloor; i++)
+        {
+            FloorData data = new FloorData(i + 1);
+            floorData[data.level] = data;
+        }
+
+        elevatorData = new ElevatorData();
+    }
 
     // Start is called before the first frame update
     void Start()
     {
-        uint numFloor = 100;
-        dictFloor = new Dictionary<uint, FloorController>(100);
+        dictFloor = new Dictionary<uint, FloorController>(floorData.Count);
 
-        for (uint i = 0; i < numFloor; i++)
+        foreach (KeyValuePair<uint, FloorData> item in floorData)
         {
             GameObject floor = Instantiate(pfFloor, layoutFloor.transform);
+            floor.transform.SetAsFirstSibling(); // for the right visual order
             FloorController component = floor.GetComponent<FloorController>();
             if (component)
             {
-                uint floorLevel = numFloor - i;
-                component.SetFloorLevel(numFloor - i);
+                component.SetFloorData(item.Value);
+                component.UpdateUI();
                 component.SetFloorRequestCallback(OnGetFloorRequest);
-                dictFloor.Add(floorLevel, component);
+                dictFloor.Add(item.Key, component);
             }
-        }
-
-        // Prevent top floor going up
-        FloorController topFloor = GetFloorController(numFloor);
-        if (topFloor)
-        {
-            topFloor.SetDirectionInteractable(false, Direction.Up);
-        }
-
-        // Prevent bottom floor going down
-        FloorController bottomFloor = GetFloorController(1);
-        if (bottomFloor)
-        {
-            bottomFloor.SetDirectionInteractable(false, Direction.Down);
         }
     }
 
@@ -63,24 +65,61 @@ public class TerminalController : MonoBehaviour
 
     void HandleFloorRequest(FloorRequest rq)
     {
-        // handle it
+        // Handle it
+        FloorData floor = GetFloorData(rq.level);
+        if (floor != null)
+        {
+            bool isSuccess = floor.ProcessRequest(rq.direction);
+            FloorResponse rs = new FloorResponse();
+            rs.floorData = floor;
+            rs.resultCode = isSuccess ? ResultCode.FloorRequestSucceeded : ResultCode.Failed;
 
-        // Send Response
-        FloorResponse rs = new FloorResponse();
-        rs.level = rq.level;
-        rs.direction = rq.direction;
-        rs.resultCode = ResultCode.FloorRequestSucceed;
+            SendFloorResponse(rs);
+            Logger.Log(Logger.kTagRes, JsonUtility.ToJson(rs));
+        }
+        else
+        {
+            // Send Response
+            FloorResponse rs = new FloorResponse();
+            rs.resultCode = ResultCode.Failed;
 
-        SendFloorResponse(rs);
-        Logger.Log(Logger.kTagRes, JsonUtility.ToJson(rs));
+            SendFloorResponse(rs);
+            Logger.Log(Logger.kTagRes, JsonUtility.ToJson(rs));
+        }
     }
 
     void SendFloorResponse(FloorResponse rs)
     {
-        FloorController component = GetFloorController(rs.level);
+        FloorController component = GetFloorController(rs.floorData.level);
         if (component)
         {
             component.OnGetResponse(rs);
+        }
+    }
+
+    void OnGetCallRequest(CallRequest request)
+    {
+        HandleCallRequest(request);
+    }
+
+    void HandleCallRequest(CallRequest request)
+    {
+        // Handle it
+
+        // Send response
+        CallResponse response = new CallResponse();
+        response.levelRequested = request.level;
+        response.resultCode = ResultCode.CallRequestSucceeded;
+
+        SendCallResponse(response);
+        Logger.Log(Logger.kTagRes, JsonUtility.ToJson(response));
+    }
+
+    void SendCallResponse(CallResponse response)
+    {
+        if (elevatorInterfaceController)
+        {
+            elevatorInterfaceController.OnGetCallResponse(response);
         }
     }
 
@@ -98,6 +137,20 @@ public class TerminalController : MonoBehaviour
         return null;
     }
 
+    /// <summary>
+    /// Get FloorData by level, return null if key not found
+    /// </summary>
+    /// <param name="level">key floor level</param>
+    /// <returns></returns>
+    FloorData GetFloorData(uint level)
+    {
+        if (floorData.ContainsKey(level))
+        {
+            return floorData[level];
+        }
+        return null;
+    }
+
     public void SetElevatorInterface(ElevatorInterfaceController elevatorInterface)
     {
         elevatorInterfaceController = elevatorInterface;
@@ -109,32 +162,6 @@ public class TerminalController : MonoBehaviour
         if (elevatorInterfaceController)
         {
             elevatorInterfaceController.Show(OnGetCallRequest);
-        }
-    }
-
-    void OnGetCallRequest(CallRequest request)
-    {
-        HandleCallRequest(request);
-    }
-
-    void HandleCallRequest(CallRequest request)
-    {
-        // Handle it
-
-        // Send response
-        CallResponse response = new CallResponse();
-        response.levelRequested = request.level;
-        response.resultCode = ResultCode.CallRequestSucceed;
-
-        SendCallResponse(response);
-        Logger.Log(Logger.kTagRes, JsonUtility.ToJson(response));
-    }
-
-    void SendCallResponse(CallResponse response)
-    {
-        if (elevatorInterfaceController)
-        {
-            elevatorInterfaceController.OnGetCallResponse(response);
         }
     }
 }
