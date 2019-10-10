@@ -123,6 +123,31 @@ public class TerminalController : MonoBehaviour
         }
     }
 
+    void ProcessData()
+    {
+        // find the closest floor requested at current direction
+        uint curFloor = elevatorData.curFloorLevel;
+        if (elevatorData.status == ElevatorStatus.Waiting)
+        {
+            FloorData floorData = GetFloorData(curFloor);
+            if (floorData.status == FloorStatus.Waiting)
+            {
+
+            }
+            else
+            {
+                // Cur floor has request
+                elevatorData.status = ElevatorStatus.Opening;
+                
+            }
+        }
+    }
+
+    void SendElevatorResponse()
+    {
+
+    }
+
     /// <summary>
     /// Get FloorController by level, return null if key not found
     /// </summary>

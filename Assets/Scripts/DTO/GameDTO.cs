@@ -45,3 +45,10 @@ public class CallResponse
     public ResultCode resultCode;
     public uint levelRequested;
 }
+
+[SerializeField]
+public class ElevatorResponse
+{
+    public ResultCode resultCode;
+    ElevatorData elevatorData;
+}

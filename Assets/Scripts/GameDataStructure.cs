@@ -29,6 +29,10 @@ public enum FloorStatus
 public enum ElevatorStatus
 {
     Waiting,
+    Opening,
+    Opened,
+    Closing,
+    Closed,
     GoingUp,
     GoingDown
 }
@@ -61,7 +65,7 @@ public class FloorData
 
     public bool IsBottomFloor()
     {
-        return level == 1;
+        return level == GameConfig.kBottomFloor;
     }
 
     /// <summary>
@@ -101,10 +105,14 @@ public class FloorData
 public class ElevatorData
 {
     public ElevatorStatus status;
+    public uint curFloorLevel;
+    public HashSet<uint> listFloorsRequesting;
 
     public ElevatorData()
     {
         status = ElevatorStatus.Waiting;
+        curFloorLevel = GameConfig.kBottomFloor;
+        listFloorsRequesting = new HashSet<uint>();
     }
 }
 
