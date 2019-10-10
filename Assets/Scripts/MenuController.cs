@@ -47,7 +47,7 @@ public class MenuController : MonoBehaviour
             numElevator = numElevator > kDefaultNumElevator ? numElevator : kDefaultNumElevator;
         }
 
-        GameData.SetInputData(numFloor, numElevator);
+        GameConfig.SetInputData(numFloor, numElevator);
         Debug.LogFormat("Start game with config: {0} floors and {1} elevator", numFloor, numElevator);
         SceneManager.LoadScene(kGameScene);
     }

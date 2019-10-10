@@ -68,7 +68,7 @@
     <Compile Include="Assets\Scripts\ElevatorController.cs" />
     <Compile Include="Assets\Scripts\ElevatorInterfaceController.cs" />
     <Compile Include="Assets\Scripts\FloorController.cs" />
-    <Compile Include="Assets\Scripts\GameData.cs" />
+    <Compile Include="Assets\Scripts\GameConfig.cs" />
     <Compile Include="Assets\Scripts\Logger\Logger.cs" />
     <Compile Include="Assets\Scripts\MenuController.cs" />
     <Compile Include="Assets\Scripts\ShowOnlyAttribute.cs" />

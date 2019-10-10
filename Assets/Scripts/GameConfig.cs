@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class GameData : MonoBehaviour
+public class GameConfig : MonoBehaviour
 {
     public static uint NumFloor = 2;
     public static uint NumElevator = 1;
