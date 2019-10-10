@@ -108,7 +108,33 @@ public class TerminalController : MonoBehaviour
     {
         if (elevatorInterfaceController)
         {
-            elevatorInterfaceController.Show();
+            elevatorInterfaceController.Show(OnGetCallRequest);
+        }
+    }
+
+    void OnGetCallRequest(CallRequest request)
+    {
+        HandleCallRequest(request);
+    }
+
+    void HandleCallRequest(CallRequest request)
+    {
+        // Handle it
+
+        // Send response
+        CallResponse response = new CallResponse();
+        response.levelRequested = request.level;
+        response.resultCode = ResultCode.CallRequestSucceed;
+
+        SendCallResponse(response);
+        Logger.Log(Logger.kTagRes, JsonUtility.ToJson(response));
+    }
+
+    void SendCallResponse(CallResponse response)
+    {
+        if (elevatorInterfaceController)
+        {
+            elevatorInterfaceController.OnGetCallResponse(response);
         }
     }
 }

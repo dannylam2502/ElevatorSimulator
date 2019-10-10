@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public delegate void OnFloorRequestCallback(FloorRequest request);
-
 public class FloorController : MonoBehaviour
 {
     [ShowOnly] 
@@ -18,7 +16,7 @@ public class FloorController : MonoBehaviour
     [SerializeField]
     Button btnDown;
 
-    OnFloorRequestCallback callback;
+    OnFloorRequestCallback onFloorRequestCallback;
     // Start is called before the first frame update
     void Start()
     {
@@ -69,14 +67,14 @@ public class FloorController : MonoBehaviour
         rq.level = floorLevel;
         rq.direction = d;
 
-        callback?.Invoke(rq);
+        onFloorRequestCallback?.Invoke(rq);
 
         Logger.Log(Logger.kTagReq, JsonUtility.ToJson(rq));
     }
 
     public void SetFloorRequestCallback(OnFloorRequestCallback cb)
     {
-        callback = cb;
+        onFloorRequestCallback = cb;
     }
 
     public void OnGetResponse(FloorResponse response)

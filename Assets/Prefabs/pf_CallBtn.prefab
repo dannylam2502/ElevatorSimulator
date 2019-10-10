@@ -130,6 +130,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   txtFloorLevel: {fileID: 1562214878930809785}
   floorLevel: 0
+  btnCall: {fileID: 444804959970599944}
 --- !u!1 &7211270832585009441
 GameObject:
   m_ObjectHideFlags: 0
@@ -249,6 +250,17 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 44427651374644832}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 5890302893394124020}
+        m_MethodName: OnClick
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
     m_TypeName: UnityEngine.UI.Button+ButtonClickedEvent, UnityEngine.UI, Version=1.0.0.0,
       Culture=neutral, PublicKeyToken=null

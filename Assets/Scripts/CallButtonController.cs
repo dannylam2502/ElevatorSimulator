@@ -11,6 +11,13 @@ public class CallButtonController : MonoBehaviour
     [ShowOnly]
     [SerializeField]
     uint floorLevel;
+
+    [SerializeField]
+    Button btnCall;
+
+    public delegate void OnClickCallButtonCallback(uint level);
+    OnClickCallButtonCallback onClickCallback;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -23,14 +30,29 @@ public class CallButtonController : MonoBehaviour
         
     }
 
+    public void SetOnClickCallback(OnClickCallButtonCallback callback)
+    {
+        onClickCallback = callback;
+    }
+
     public void OnClick()
     {
+        SendRequest();
+    }
 
+    void SendRequest()
+    {
+        onClickCallback?.Invoke(floorLevel);
     }
 
     public void SetFloorLevel(uint level)
     {
         floorLevel = level;
         txtFloorLevel.text = level.ToString();
+    }
+
+    public void SetSelected(bool isSelected)
+    {
+        btnCall.interactable = !isSelected;
     }
 }
