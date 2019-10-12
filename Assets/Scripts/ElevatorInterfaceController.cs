@@ -20,7 +20,7 @@ public class ElevatorInterfaceController : MonoBehaviour
     void Start()
     {
         dictCallBtnController = new Dictionary<uint, CallButtonController>();
-        for (uint i = 0; i < 100; i++)
+        for (uint i = 0; i < GameConfig.NumFloor; i++)
         {
             GameObject floorBtn = Instantiate(pfCallBtn, layoutFloorBtn.transform);
             CallButtonController component = floorBtn.GetComponent<CallButtonController>();

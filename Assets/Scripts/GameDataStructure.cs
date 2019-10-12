@@ -37,11 +37,21 @@ public enum ElevatorStatus
     GoingDown
 }
 
+[SerializeField]
 public class FloorData
 {
     public uint level;
     public FloorStatus status;
     public Direction requestableDirection; // Control if this floor can request to go up, down, or not at all
+
+    public FloorData DeepCopy()
+    {
+        FloorData other = (FloorData)this.MemberwiseClone();
+        other.level = level;
+        other.status = status;
+        other.requestableDirection = requestableDirection;
+        return other;
+    }
 
     public FloorData(uint level)
     {
@@ -102,6 +112,7 @@ public class FloorData
     }
 }
 
+[Serializable]
 public class ElevatorData
 {
     public ElevatorStatus status;
@@ -111,8 +122,16 @@ public class ElevatorData
     public ElevatorData()
     {
         status = ElevatorStatus.Waiting;
-        curFloorLevel = GameConfig.kBottomFloor;
+        curFloorLevel = GameConfig.GetTopFloor();
         listFloorsRequesting = new HashSet<uint>();
+    }
+
+    public ElevatorData DeepCopy()
+    {
+        ElevatorData other = (ElevatorData)this.MemberwiseClone();
+        other.curFloorLevel = curFloorLevel;
+        other.listFloorsRequesting = new HashSet<uint>(listFloorsRequesting);
+        return other;
     }
 }
 

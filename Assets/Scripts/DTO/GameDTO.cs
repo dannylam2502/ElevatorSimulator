@@ -1,10 +1,12 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System;
 using UnityEngine;
 
 // delegates
 public delegate void OnFloorRequestCallback(FloorRequest request);
 public delegate void OnCallRequestCallback(CallRequest request);
+public delegate void Callback();
 
 public enum ResultCode
 {
@@ -19,36 +21,43 @@ public class GameDTO
 
 }
 
-[SerializeField]
+[Serializable]
 public class FloorRequest
 {
     public uint level;
     public Direction direction;
 }
 
-[SerializeField]
+[Serializable]
 public class FloorResponse
 {
     public ResultCode resultCode;
     public FloorData floorData;
 }
 
-[SerializeField]
+[Serializable]
 public class CallRequest
 {
     public uint level;
 }
 
-[SerializeField]
+[Serializable]
 public class CallResponse
 {
     public ResultCode resultCode;
     public uint levelRequested;
 }
 
-[SerializeField]
-public class ElevatorResponse
+[Serializable]
+public class ElevatorUpdateResponse
 {
-    public ResultCode resultCode;
-    ElevatorData elevatorData;
+    public ElevatorData updatedElevatorData;
+    // only calculate Y position
+    public float destinationY;
+}
+
+[Serializable]
+public class ElevatorDataResponse
+{
+    public ElevatorData elevatorData;
 }

@@ -18,6 +18,9 @@ public class FloorController : MonoBehaviour
 
     public static Color CannotBeUsedColor = Color.grey;
     public static Color CanBeUsedColor = Color.white;
+
+    public const float FloorOffset = 25.0f;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -113,5 +116,10 @@ public class FloorController : MonoBehaviour
             floorData = response.floorData;
             UpdateUI();
         }
+    }
+
+    public float GetFittedElevatorAnchoredPositionY()
+    {
+        return GetComponent<RectTransform>().anchoredPosition.y + FloorOffset;
     }
 }

@@ -50,12 +50,20 @@ public class TerminalController : MonoBehaviour
                 dictFloor.Add(item.Key, component);
             }
         }
+
+        FloorController topFloorController = GetFloorController(GameConfig.GetTopFloor());
+        if (topFloorController)
+        {
+            // Cannot use position of top floor because its correct position will be updated in next frame.
+            elevatorController.SetAtDefaultAnchoredPositionY();
+        }
+
+        SendElevatorData();
     }
 
     // Update is called once per frame
     void Update()
     {
-        
     }
 
     void OnGetFloorRequest(FloorRequest rq)
@@ -71,15 +79,22 @@ public class TerminalController : MonoBehaviour
         {
             bool isSuccess = floor.ProcessRequest(rq.direction);
             FloorResponse rs = new FloorResponse();
-            rs.floorData = floor;
+            rs.floorData = floor.DeepCopy();
             rs.resultCode = isSuccess ? ResultCode.FloorRequestSucceeded : ResultCode.Failed;
 
+            // Send Response to Floor
             SendFloorResponse(rs);
             Logger.Log(Logger.kTagRes, JsonUtility.ToJson(rs));
+
+            if (isSuccess)
+            {
+                // Update Elevator
+                UpdateElevator();
+            }
         }
         else
         {
-            // Send Response
+            // Send Response to Floor
             FloorResponse rs = new FloorResponse();
             rs.resultCode = ResultCode.Failed;
 
@@ -123,7 +138,7 @@ public class TerminalController : MonoBehaviour
         }
     }
 
-    void ProcessData()
+    void UpdateElevator()
     {
         // find the closest floor requested at current direction
         uint curFloor = elevatorData.curFloorLevel;
@@ -138,14 +153,37 @@ public class TerminalController : MonoBehaviour
             {
                 // Cur floor has request
                 elevatorData.status = ElevatorStatus.Opening;
-                
+
+                ElevatorUpdateResponse response = new ElevatorUpdateResponse();
+                response.updatedElevatorData = elevatorData.DeepCopy();
+                response.destinationY = GetFloorController(floorData.level).GetFittedElevatorAnchoredPositionY();
+
+                SendElevatorUpdateResponse(response);
             }
         }
     }
 
-    void SendElevatorResponse()
+    /// <summary>
+    /// Update Elevator Data to elevator controller
+    /// </summary>
+    void SendElevatorData()
     {
+        ElevatorDataResponse response = new ElevatorDataResponse();
+        response.elevatorData = elevatorData.DeepCopy();
 
+        SendElevatorDataResponse(response);
+    }
+
+    void SendElevatorDataResponse(ElevatorDataResponse response)
+    {
+        elevatorController?.OnGetElevatorDataResponse(response);
+        Logger.Log(Logger.kTagRes, JsonUtility.ToJson(response));
+    }
+
+    void SendElevatorUpdateResponse(ElevatorUpdateResponse response)
+    {
+        elevatorController?.OnGetElevatorUpdateResponse(response);
+        Logger.Log(Logger.kTagRes, JsonUtility.ToJson(response));
     }
 
     /// <summary>

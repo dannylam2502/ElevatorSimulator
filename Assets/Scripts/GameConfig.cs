@@ -32,6 +32,6 @@ public class GameConfig : MonoBehaviour
 
     public static uint GetBottomFloor()
     {
-        return 1;
+        return kBottomFloor;
     }
 }
