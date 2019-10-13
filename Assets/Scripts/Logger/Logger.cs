@@ -8,7 +8,7 @@ public class Logger : MonoBehaviour
     public const string kTagRes = "res-";
     public const string kTagError = "err-";
     
-    // only log when using Unity Editor
+    // Only log when using Unity Editor
 #if UNITY_EDITOR
     public static bool isDebugOn = true;
 #else

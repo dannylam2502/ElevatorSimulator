@@ -23,6 +23,8 @@ public class ElevatorController : MonoBehaviour
 
     public const float DefaultAnchoredPositionY = -55.0f; // Top floor
 
+    OnElevatorStatusUpdateRequestCallback onElevatorStatusUpdateCallback;
+
     // cached
     RectTransform rectTransform;
 
@@ -107,12 +109,37 @@ public class ElevatorController : MonoBehaviour
             {
                 doorController.Open(OnDoorOpened);
             }
+
+            if (elevatorData.status == ElevatorStatus.MovingDown)
+            {
+                
+            }
         }
         yield return new WaitForEndOfFrame();
     }
 
     void OnDoorOpened()
     {
+        SendStatusUpdateRequest(ElevatorStatus.Opened);
+    }
 
+    public void SetOnElevatorStatusUpdateCallback(OnElevatorStatusUpdateRequestCallback callback)
+    {
+        onElevatorStatusUpdateCallback = callback;
+    }
+
+    public void SendStatusUpdateRequest(ElevatorStatus newStatus)
+    {
+        ElevatorStatusUpdateRequest request = new ElevatorStatusUpdateRequest();
+        request.newStatus = newStatus;
+        onElevatorStatusUpdateCallback?.Invoke(request);
+    }
+
+    public void OnGetElevatorStatusUpdateResponse(ElevatorStatusUpdateResponse response)
+    {
+        if (response.resultCode == ResultCode.Succeeded)
+        {
+            elevatorData = response.elevatorData;
+        }
     }
 }

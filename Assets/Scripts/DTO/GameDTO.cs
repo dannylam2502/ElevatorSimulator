@@ -7,13 +7,13 @@ using UnityEngine;
 public delegate void OnFloorRequestCallback(FloorRequest request);
 public delegate void OnCallRequestCallback(CallRequest request);
 public delegate void Callback();
+public delegate void OnElevatorStatusUpdateRequestCallback(ElevatorStatusUpdateRequest request);
 
 public enum ResultCode
 {
     None,
     Failed,
-    FloorRequestSucceeded,
-    CallRequestSucceeded
+    Succeeded,
 }
 
 public class GameDTO
@@ -59,5 +59,18 @@ public class ElevatorUpdateResponse
 [Serializable]
 public class ElevatorDataResponse
 {
+    public ElevatorData elevatorData;
+}
+
+[Serializable]
+public class ElevatorStatusUpdateRequest
+{
+    public ElevatorStatus newStatus;
+}
+
+[Serializable]
+public class ElevatorStatusUpdateResponse
+{
+    public ResultCode resultCode;
     public ElevatorData elevatorData;
 }

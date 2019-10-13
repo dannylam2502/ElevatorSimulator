@@ -33,8 +33,8 @@ public enum ElevatorStatus
     Opened,
     Closing,
     Closed,
-    GoingUp,
-    GoingDown
+    MovingUp,
+    MovingDown
 }
 
 [SerializeField]

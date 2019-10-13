@@ -100,8 +100,6 @@ public class FloorController : MonoBehaviour
         rq.direction = d;
 
         onFloorRequestCallback?.Invoke(rq);
-
-        Logger.Log(Logger.kTagReq, JsonUtility.ToJson(rq));
     }
 
     public void SetFloorRequestCallback(OnFloorRequestCallback cb)
@@ -111,7 +109,7 @@ public class FloorController : MonoBehaviour
 
     public void OnGetResponse(FloorResponse response)
     {
-        if (response.resultCode == ResultCode.FloorRequestSucceeded)
+        if (response.resultCode == ResultCode.Succeeded)
         {
             floorData = response.floorData;
             UpdateUI();
