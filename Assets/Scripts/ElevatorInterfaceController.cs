@@ -67,12 +67,12 @@ public class ElevatorInterfaceController : MonoBehaviour
 
     public void SendCallRequest(uint level)
     {
-        CallRequest request = new CallRequest();
+        CallFloorRequest request = new CallFloorRequest();
         request.level = level;
         onCallRequestCallback?.Invoke(request);
     }
 
-    public void OnGetCallResponse(CallResponse response)
+    public void OnGetCallResponse(CallFloorResponse response)
     {
         if (response.resultCode == ResultCode.Succeeded)
         {

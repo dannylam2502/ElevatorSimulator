@@ -1,16 +1,19 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class ElevatorController : MonoBehaviour
 {
+    [SerializeField]
+    private Text txtCurFloor;
+    [SerializeField]
+    private Text txtCurStatus;
     [ShowOnly]
     [SerializeField]
-    private Vector3 curDestination;
+    private float curDestinationY;
     [SerializeField]
-    private float speed = 20.0f;
-    [SerializeField]
-    private Direction direction;
+    private float speed = 30.0f;
     [SerializeField]
     private DoorController doorController;
 
@@ -24,6 +27,7 @@ public class ElevatorController : MonoBehaviour
     public const float DefaultAnchoredPositionY = -55.0f; // Top floor
 
     OnElevatorStatusUpdateRequestCallback onElevatorStatusUpdateCallback;
+    OnUpdateElevatorPositionCallback onUpdateElevatorPositionCallback;
 
     // cached
     RectTransform rectTransform;
@@ -56,44 +60,44 @@ public class ElevatorController : MonoBehaviour
         rectTransform.anchoredPosition = position;
     }
 
-    public void SetDestination(Vector3 position)
-    {
-        curDestination = position;
-    }
-
-    public void SetDirection(Direction d)
-    {
-        direction = d;
-    }
-
     public void Stop()
     {
 
     }
 
-    public void Move(Direction d)
-    {
-
-    }
-
-    public void OnGetElevatorDataResponse(ElevatorDataResponse response)
+    public void OnGetElevatorDataResponse(GetElevatorDataResponse response)
     {
         elevatorData = response.elevatorData;
+        UpdateUI();
     }
 
-    public void OnGetElevatorUpdateResponse(ElevatorUpdateResponse response)
+    public void OnGetElevatorUpdateResponse(UpdateElevatorResponse response)
     {
         if (elevatorData != null) // If null, it means haven't got elevatorData before
         {
             prevElevatorData = elevatorData;
             elevatorData = response.updatedElevatorData;
+            curDestinationY = response.destinationY;
 
-            // Run coroutine
-            if (coroutineElevator != null)
+            if (prevElevatorData.status == ElevatorStatus.Waiting)
             {
-                StopCoroutine(coroutineElevator);
+                if (elevatorData.status == ElevatorStatus.Opening)
+                {
+                    doorController.Open(OnDoorOpened);
+                }
+
+                if (elevatorData.status == ElevatorStatus.MovingDown)
+                {
+                    // Run coroutine
+                    if (coroutineElevator != null)
+                    {
+                        StopCoroutine(coroutineElevator);
+                    }
+                    coroutineElevator = StartCoroutine(RoutineElevator());
+                }
             }
-            coroutineElevator = StartCoroutine(RoutineElevator());
+
+            UpdateUI();
         }
         else
         {
@@ -103,18 +107,21 @@ public class ElevatorController : MonoBehaviour
 
     public IEnumerator RoutineElevator()
     {
-        if (prevElevatorData.status == ElevatorStatus.Waiting)
+        Vector2 temp = rectTransform.anchoredPosition;
+        while (rectTransform.anchoredPosition.y > curDestinationY)
         {
-            if (elevatorData.status == ElevatorStatus.Opening)
-            {
-                doorController.Open(OnDoorOpened);
-            }
+            temp = rectTransform.anchoredPosition;
+            temp.y -= speed * Time.deltaTime;
+            rectTransform.anchoredPosition = temp;
 
-            if (elevatorData.status == ElevatorStatus.MovingDown)
-            {
-                
-            }
+            UpdateElevatorPositionRequest request = new UpdateElevatorPositionRequest();
+            request.positionY = rectTransform.anchoredPosition.y;
+            onUpdateElevatorPositionCallback?.Invoke(request);
+            yield return new WaitForEndOfFrame();
         }
+        temp.y = curDestinationY;
+        rectTransform.anchoredPosition = temp;
+        
         yield return new WaitForEndOfFrame();
     }
 
@@ -130,16 +137,60 @@ public class ElevatorController : MonoBehaviour
 
     public void SendStatusUpdateRequest(ElevatorStatus newStatus)
     {
-        ElevatorStatusUpdateRequest request = new ElevatorStatusUpdateRequest();
+        UpdateElevatorStatusRequest request = new UpdateElevatorStatusRequest();
         request.newStatus = newStatus;
         onElevatorStatusUpdateCallback?.Invoke(request);
     }
 
-    public void OnGetElevatorStatusUpdateResponse(ElevatorStatusUpdateResponse response)
+    public void OnGetElevatorStatusUpdateResponse(UpdateElevatorStatusResponse response)
     {
         if (response.resultCode == ResultCode.Succeeded)
         {
             elevatorData = response.elevatorData;
         }
+    }
+
+    public void SetUpdateElevatorPositionCallback(OnUpdateElevatorPositionCallback callback)
+    {
+        onUpdateElevatorPositionCallback = callback;
+    }
+
+    void UpdateUI()
+    {
+        txtCurFloor.text = elevatorData.curFloorLevel.ToString();
+        txtCurStatus.text = ConvertElevatorStatusToString(elevatorData.status);
+    }
+
+    public void OnGetUpdateElevatorPositionResponse(UpdateElevatorPositionResponse response)
+    {
+        if (response.resultCode == ResultCode.Succeeded)
+        {
+            elevatorData.curFloorLevel = response.newLevel;
+            UpdateUI();
+        }
+    }
+
+    public static string ConvertElevatorStatusToString(ElevatorStatus status)
+    {
+        switch (status)
+        {
+            case ElevatorStatus.Waiting:
+                return "Waiting";
+            case ElevatorStatus.Opening:
+                return "Opening";
+            case ElevatorStatus.Opened:
+                return "Opened";
+            case ElevatorStatus.Closing:
+                return "Closing";
+            case ElevatorStatus.Closed:
+                return "Closed";
+            case ElevatorStatus.MovingUp:
+                return "Moving Up";
+            case ElevatorStatus.MovingDown:
+                return "Moving Down";
+            default:
+                break;
+        }
+        return "";
     }
 }

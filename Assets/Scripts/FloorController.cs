@@ -95,7 +95,7 @@ public class FloorController : MonoBehaviour
 
     void SendRequest(Direction d)
     {
-        FloorRequest rq = new FloorRequest();
+        CallElevatorRequest rq = new CallElevatorRequest();
         rq.level = floorData.level;
         rq.direction = d;
 
@@ -107,7 +107,7 @@ public class FloorController : MonoBehaviour
         onFloorRequestCallback = cb;
     }
 
-    public void OnGetResponse(FloorResponse response)
+    public void OnGetResponse(CallElevatorResponse response)
     {
         if (response.resultCode == ResultCode.Succeeded)
         {
