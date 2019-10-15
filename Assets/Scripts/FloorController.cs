@@ -14,7 +14,7 @@ public class FloorController : MonoBehaviour
 
     FloorData floorData;
 
-    OnFloorRequestCallback onFloorRequestCallback;
+    OnCallElevatorRequestCallback onCallElevatorRequestCallback;
 
     public static Color CannotBeUsedColor = Color.grey;
     public static Color CanBeUsedColor = Color.white;
@@ -85,29 +85,26 @@ public class FloorController : MonoBehaviour
 
     public void OnClickBtnUp()
     {
-        SendRequest(Direction.Up);
+        SendCallElevatorRequest(Direction.Up);
     }
 
     public void OnClickBtnDown()
     {
-        SendRequest(Direction.Down);
+        SendCallElevatorRequest(Direction.Down);
     }
 
-    void SendRequest(Direction d)
+    void SendCallElevatorRequest(Direction direction)
     {
-        CallElevatorRequest rq = new CallElevatorRequest();
-        rq.level = floorData.level;
-        rq.direction = d;
-
-        onFloorRequestCallback?.Invoke(rq);
+        CallElevatorRequest request = new CallElevatorRequest(floorData.level, direction);
+        onCallElevatorRequestCallback?.Invoke(request);
     }
 
-    public void SetFloorRequestCallback(OnFloorRequestCallback cb)
+    public void SetCallElevatorRequestCallback(OnCallElevatorRequestCallback cb)
     {
-        onFloorRequestCallback = cb;
+        onCallElevatorRequestCallback = cb;
     }
 
-    public void OnGetResponse(CallElevatorResponse response)
+    public void OnGetCallElevatorResponse(CallElevatorResponse response)
     {
         if (response.resultCode == ResultCode.Succeeded)
         {
@@ -119,5 +116,11 @@ public class FloorController : MonoBehaviour
     public float GetFittedElevatorAnchoredPositionY()
     {
         return GetComponent<RectTransform>().anchoredPosition.y + FloorOffset;
+    }
+
+    public void OnGetElevatorArrivedResponse(ElevatorArrivedResponse response)
+    {
+        floorData = response.floorData;
+        UpdateUI();
     }
 }

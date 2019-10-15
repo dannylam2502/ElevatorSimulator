@@ -34,7 +34,8 @@ public enum ElevatorStatus
     Closing,
     Closed,
     MovingUp,
-    MovingDown
+    MovingDown,
+    Arrived
 }
 
 [SerializeField]
@@ -110,6 +111,11 @@ public class FloorData
         }
         return FloorStatus.Waiting;
     }
+
+    public void OnElevatorArrived(Direction direction)
+    {
+        status = status ^ ConvertDirectionToFloorStatus(direction);
+    }
 }
 
 [Serializable]
@@ -132,6 +138,22 @@ public class ElevatorData
         other.curFloorLevel = curFloorLevel;
         other.listFloorsRequesting = new HashSet<uint>(listFloorsRequesting);
         return other;
+    }
+
+    public Direction GetDirection()
+    {
+        if (status == ElevatorStatus.MovingDown)
+        {
+            return Direction.Down;
+        }
+        else if (status == ElevatorStatus.MovingUp)
+        {
+            return Direction.Up;
+        }
+        else
+        {
+            return Direction.None;
+        }
     }
 }
 

@@ -7,6 +7,7 @@ public class GameConfig : MonoBehaviour
     public static uint NumFloor = 100;
     public static uint NumElevator = 10;
     public const int kBottomFloor = 1;
+    public const float kTimeWaitBeforeElevatorSendRequest = 1.0f;
     // Start is called before the first frame update
     void Start()
     {

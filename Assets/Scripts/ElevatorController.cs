@@ -22,11 +22,11 @@ public class ElevatorController : MonoBehaviour
     // Use this for displaying UI and handle events
     ElevatorData prevElevatorData;
 
-    Coroutine coroutineElevator;
+    Coroutine coroutineMovingElevator;
 
     public const float DefaultAnchoredPositionY = -55.0f; // Top floor
 
-    OnElevatorStatusUpdateRequestCallback onElevatorStatusUpdateCallback;
+    OnUpdateElevatorStatusRequestCallback onElevatorStatusUpdateCallback;
     OnUpdateElevatorPositionCallback onUpdateElevatorPositionCallback;
 
     // cached
@@ -73,28 +73,37 @@ public class ElevatorController : MonoBehaviour
 
     public void OnGetElevatorUpdateResponse(UpdateElevatorResponse response)
     {
+        // Stop running coroutine
+        if (coroutineMovingElevator != null)
+        {
+            StopCoroutine(coroutineMovingElevator);
+        }
+
         if (elevatorData != null) // If null, it means haven't got elevatorData before
         {
             prevElevatorData = elevatorData;
             elevatorData = response.updatedElevatorData;
             curDestinationY = response.destinationY;
 
-            if (prevElevatorData.status == ElevatorStatus.Waiting)
+            if (elevatorData.status == ElevatorStatus.Opening)
             {
-                if (elevatorData.status == ElevatorStatus.Opening)
-                {
-                    doorController.Open(OnDoorOpened);
-                }
+                doorController.Open(OnDoorOpened);
+            }
 
-                if (elevatorData.status == ElevatorStatus.MovingDown)
-                {
-                    // Run coroutine
-                    if (coroutineElevator != null)
-                    {
-                        StopCoroutine(coroutineElevator);
-                    }
-                    coroutineElevator = StartCoroutine(RoutineElevator());
-                }
+            if (elevatorData.status == ElevatorStatus.MovingDown || elevatorData.status == ElevatorStatus.MovingUp)
+            {
+                // Run coroutine
+                coroutineMovingElevator = StartCoroutine(RoutineMoving());
+            }
+
+            if (elevatorData.status == ElevatorStatus.Arrived)
+            {
+                SendUpdateElevatorStatusRequest(ElevatorStatus.Opening);
+            }
+
+            if (elevatorData.status == ElevatorStatus.Closing)
+            {
+                doorController.Close(OnDoorClosed);
             }
 
             UpdateUI();
@@ -105,17 +114,33 @@ public class ElevatorController : MonoBehaviour
         }
     }
 
-    public IEnumerator RoutineElevator()
+    public IEnumerator RoutineMoving()
     {
+        bool isFinished = false;
         Vector2 temp = rectTransform.anchoredPosition;
-        while (rectTransform.anchoredPosition.y > curDestinationY)
+        while (isFinished == false)
         {
             temp = rectTransform.anchoredPosition;
-            temp.y -= speed * Time.deltaTime;
+            if (elevatorData.status == ElevatorStatus.MovingDown)
+            {
+                temp.y -= speed * Time.deltaTime;
+                if (temp.y <= curDestinationY)
+                {
+                    isFinished = true;
+                }
+            }
+            else if (elevatorData.status == ElevatorStatus.MovingUp)
+            {
+                temp.y += speed * Time.deltaTime;
+                if (temp.y >= curDestinationY)
+                {
+                    isFinished = true;
+                }
+            }
+
             rectTransform.anchoredPosition = temp;
 
-            UpdateElevatorPositionRequest request = new UpdateElevatorPositionRequest();
-            request.positionY = rectTransform.anchoredPosition.y;
+            UpdateElevatorPositionRequest request = new UpdateElevatorPositionRequest(rectTransform.anchoredPosition.y);
             onUpdateElevatorPositionCallback?.Invoke(request);
             yield return new WaitForEndOfFrame();
         }
@@ -127,18 +152,33 @@ public class ElevatorController : MonoBehaviour
 
     void OnDoorOpened()
     {
-        SendStatusUpdateRequest(ElevatorStatus.Opened);
+        SendUpdateElevatorStatusRequest(ElevatorStatus.Opened);
     }
 
-    public void SetOnElevatorStatusUpdateCallback(OnElevatorStatusUpdateRequestCallback callback)
+    void OnDoorClosed()
+    {
+        SendUpdateElevatorStatusRequest(ElevatorStatus.Closed);
+    }
+
+    public void SetOnElevatorStatusUpdateCallback(OnUpdateElevatorStatusRequestCallback callback)
     {
         onElevatorStatusUpdateCallback = callback;
     }
 
-    public void SendStatusUpdateRequest(ElevatorStatus newStatus)
+    /// <summary>
+    /// Run a coroutine to send request update elevator status
+    /// </summary>
+    /// <param name="newStatus">New status of elevator</param>
+    /// <param name="delayTime">Time delay, in seconds</param>
+    void SendUpdateElevatorStatusRequest(ElevatorStatus newStatus, float delayTime = GameConfig.kTimeWaitBeforeElevatorSendRequest)
     {
-        UpdateElevatorStatusRequest request = new UpdateElevatorStatusRequest();
-        request.newStatus = newStatus;
+        StartCoroutine(RoutineSendStatusUpdateRequest(newStatus, delayTime));
+    }
+
+    public IEnumerator RoutineSendStatusUpdateRequest(ElevatorStatus newStatus, float delayTime)
+    {
+        yield return new WaitForSeconds(delayTime);
+        UpdateElevatorStatusRequest request = new UpdateElevatorStatusRequest(newStatus);
         onElevatorStatusUpdateCallback?.Invoke(request);
     }
 
@@ -146,7 +186,14 @@ public class ElevatorController : MonoBehaviour
     {
         if (response.resultCode == ResultCode.Succeeded)
         {
-            elevatorData = response.elevatorData;
+            elevatorData.status = response.curStatus;
+
+            if (response.curStatus == ElevatorStatus.Opened)
+            {
+                // Assume that every passenger goes out in instant, now we need to close it.
+                SendUpdateElevatorStatusRequest(ElevatorStatus.Closing);
+            }
+            UpdateUI();
         }
     }
 
@@ -188,6 +235,8 @@ public class ElevatorController : MonoBehaviour
                 return "Moving Up";
             case ElevatorStatus.MovingDown:
                 return "Moving Down";
+            case ElevatorStatus.Arrived:
+                return "Arrived";
             default:
                 break;
         }

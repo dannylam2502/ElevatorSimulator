@@ -12,7 +12,7 @@ public class ElevatorInterfaceController : MonoBehaviour
     [SerializeField]
     GridLayoutGroup layoutFloorBtn;
 
-    OnCallRequestCallback onCallRequestCallback;
+    OnCallFloorRequestCallback onCallRequestCallback;
 
     Dictionary<uint, CallButtonController> dictCallBtnController;
     
@@ -39,7 +39,7 @@ public class ElevatorInterfaceController : MonoBehaviour
         
     }
 
-    public void Show(OnCallRequestCallback callback)
+    public void Show(OnCallFloorRequestCallback callback)
     {
         content.SetActive(true);
         onCallRequestCallback = callback;
@@ -57,22 +57,21 @@ public class ElevatorInterfaceController : MonoBehaviour
 
     void OnClickCallButton(uint level)
     {
-        SendCallRequest(level);
+        SendCallFloorRequest(level);
     }
 
-    public void SetCallRequestCallback(OnCallRequestCallback callback)
+    public void SetCallRequestCallback(OnCallFloorRequestCallback callback)
     {
         onCallRequestCallback = callback;
     }
 
-    public void SendCallRequest(uint level)
+    public void SendCallFloorRequest(uint level)
     {
-        CallFloorRequest request = new CallFloorRequest();
-        request.level = level;
+        CallFloorRequest request = new CallFloorRequest(level);
         onCallRequestCallback?.Invoke(request);
     }
 
-    public void OnGetCallResponse(CallFloorResponse response)
+    public void OnGetCallFloorResponse(CallFloorResponse response)
     {
         if (response.resultCode == ResultCode.Succeeded)
         {
@@ -83,7 +82,6 @@ public class ElevatorInterfaceController : MonoBehaviour
             }
         }
     }
-
 
     /// <summary>
     /// Get FloorController by level, return null if key not found

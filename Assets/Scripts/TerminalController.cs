@@ -11,6 +11,9 @@ public class TerminalController : MonoBehaviour
     GameObject pfFloor;
     [SerializeField]
     ElevatorController elevatorController;
+    [ShowOnly]
+    [SerializeField]
+    uint curDestFloor; // Tracking the floor to which elevator's going to move.
 
     ElevatorInterfaceController elevatorInterfaceController;
 
@@ -22,6 +25,7 @@ public class TerminalController : MonoBehaviour
 
     private void Awake()
     {
+        curDestFloor = 0;
         floorData = new Dictionary<uint, FloorData>();
         for (uint i = 0; i < GameConfig.NumFloor; i++)
         {
@@ -46,7 +50,7 @@ public class TerminalController : MonoBehaviour
             {
                 component.SetFloorData(item.Value);
                 component.UpdateUI();
-                component.SetFloorRequestCallback(OnGetFloorRequest);
+                component.SetCallElevatorRequestCallback(OnGetFloorRequest);
                 dictFloor.Add(item.Key, component);
             }
         }
@@ -82,13 +86,9 @@ public class TerminalController : MonoBehaviour
         if (floor != null)
         {
             bool isSuccess = floor.ProcessRequest(rq.direction);
-            CallElevatorResponse rs = new CallElevatorResponse();
-            rs.floorData = floor.DeepCopy();
-            rs.resultCode = isSuccess ? ResultCode.Succeeded : ResultCode.Failed;
-
+            CallElevatorResponse rs = new CallElevatorResponse(isSuccess ? ResultCode.Succeeded : ResultCode.Failed, floor);
             // Send Response to Floor
-            SendFloorResponse(rs);
-            Logger.Log(Logger.kTagRes, "HandleFloorRequest " + JsonUtility.ToJson(rs));
+            SendCallElevatorResponse(rs);
 
             if (isSuccess)
             {
@@ -99,55 +99,54 @@ public class TerminalController : MonoBehaviour
         else
         {
             // Send Response to Floor
-            CallElevatorResponse rs = new CallElevatorResponse();
-            rs.resultCode = ResultCode.Failed;
-
-            SendFloorResponse(rs);
-            Logger.Log(Logger.kTagRes, "HandleFloorRequest " + JsonUtility.ToJson(rs));
+            CallElevatorResponse response = new CallElevatorResponse(ResultCode.Failed, null);
+            SendCallElevatorResponse(response);
         }
     }
 
-    void SendFloorResponse(CallElevatorResponse rs)
+    void SendCallElevatorResponse(CallElevatorResponse response)
     {
-        FloorController component = GetFloorController(rs.floorData.level);
+        FloorController component = GetFloorController(response.floorData.level);
         if (component)
         {
-            component.OnGetResponse(rs);
+            component.OnGetCallElevatorResponse(response);
         }
+        Logger.Log(Logger.kTagRes, "SendCallElevatorResponse " + JsonUtility.ToJson(response));
     }
 
-    void OnGetCallRequest(CallFloorRequest request)
+    void OnGetCallFloorRequest(CallFloorRequest request)
     {
         Logger.Log(Logger.kTagReq, "OnGetCallRequest " + JsonUtility.ToJson(request));
-        HandleCallRequest(request);
+        HandleCallFloorRequest(request);
     }
 
-    void HandleCallRequest(CallFloorRequest request)
+    void HandleCallFloorRequest(CallFloorRequest request)
     {
         // Handle it
 
         // Send response
-        CallFloorResponse response = new CallFloorResponse();
-        response.levelRequested = request.level;
-        response.resultCode = ResultCode.Succeeded;
+        CallFloorResponse response = new CallFloorResponse(ResultCode.Succeeded, request.level);
 
-        SendCallResponse(response);
+        SendCallFloorResponse(response);
         Logger.Log(Logger.kTagRes, "HandleCallRequest " + JsonUtility.ToJson(response));
     }
 
-    void SendCallResponse(CallFloorResponse response)
+    void SendCallFloorResponse(CallFloorResponse response)
     {
         if (elevatorInterfaceController)
         {
-            elevatorInterfaceController.OnGetCallResponse(response);
+            elevatorInterfaceController.OnGetCallFloorResponse(response);
         }
     }
 
+    /// <summary>
+    /// Processes data and send approriate command to elevator
+    /// </summary>
     void UpdateElevator()
     {
         // find the closest floor requested at current direction
         uint curFloor = elevatorData.curFloorLevel;
-        if (elevatorData.status == ElevatorStatus.Waiting)
+        if (elevatorData.status == ElevatorStatus.Waiting || elevatorData.status == ElevatorStatus.Closed)
         {
             FloorData floorData = GetFloorData(curFloor);
             if (floorData.status == FloorStatus.Waiting)
@@ -180,26 +179,31 @@ public class TerminalController : MonoBehaviour
                 }
                 if (nextFloor >= GameConfig.GetBottomFloor() && nextFloor <= GameConfig.GetTopFloor())
                 {
+                    curDestFloor = nextFloor;
                     // Update data
-                    elevatorData.status = nextFloor > curFloor ? ElevatorStatus.MovingUp : ElevatorStatus.MovingDown;
-
-                    UpdateElevatorResponse response = new UpdateElevatorResponse();
-                    response.updatedElevatorData = elevatorData.DeepCopy();
-                    response.destinationY = GetFloorController(nextFloor).GetFittedElevatorAnchoredPositionY();
-
-                    SendElevatorUpdateResponse(response);
+                    elevatorData.status = curDestFloor > curFloor ? ElevatorStatus.MovingUp : ElevatorStatus.MovingDown;
+                    float destinationY = GetFloorController(curDestFloor).GetFittedElevatorAnchoredPositionY();
+                    UpdateElevatorResponse response = new UpdateElevatorResponse(elevatorData, destinationY);
+                    SendUpdateElevatorResponse(response);
+                }
+                else
+                {
+                    // No Request, waiting
+                    elevatorData.status = ElevatorStatus.Waiting;
+                    UpdateElevatorResponse response = new UpdateElevatorResponse(elevatorData, 0);
+                    SendUpdateElevatorResponse(response);
                 }
             }
             else
             {
                 // Cur floor has request
                 elevatorData.status = ElevatorStatus.Opening;
+                floorData.OnElevatorArrived(elevatorData.GetDirection());
+                SendElevatorArrivedResponse(new ElevatorArrivedResponse(floorData));
 
-                UpdateElevatorResponse response = new UpdateElevatorResponse();
-                response.updatedElevatorData = elevatorData.DeepCopy();
-                response.destinationY = GetFloorController(curFloor).GetFittedElevatorAnchoredPositionY();
-
-                SendElevatorUpdateResponse(response);
+                float destinationY = GetFloorController(curFloor).GetFittedElevatorAnchoredPositionY();
+                UpdateElevatorResponse response = new UpdateElevatorResponse(elevatorData, destinationY);
+                SendUpdateElevatorResponse(response);
             }
         }
     }
@@ -209,8 +213,7 @@ public class TerminalController : MonoBehaviour
     /// </summary>
     void SendElevatorData()
     {
-        GetElevatorDataResponse response = new GetElevatorDataResponse();
-        response.elevatorData = elevatorData.DeepCopy();
+        GetElevatorDataResponse response = new GetElevatorDataResponse(elevatorData);
 
         SendElevatorDataResponse(response);
     }
@@ -221,7 +224,7 @@ public class TerminalController : MonoBehaviour
         Logger.Log(Logger.kTagRes, "SendElevatorDataResponse " + JsonUtility.ToJson(response));
     }
 
-    void SendElevatorUpdateResponse(UpdateElevatorResponse response)
+    void SendUpdateElevatorResponse(UpdateElevatorResponse response)
     {
         elevatorController?.OnGetElevatorUpdateResponse(response);
         Logger.Log(Logger.kTagRes, "SendElevatorUpdateResponse " + JsonUtility.ToJson(response));
@@ -235,17 +238,45 @@ public class TerminalController : MonoBehaviour
 
     void HandleGetElevatorStatusUpdateRequest(UpdateElevatorStatusRequest request)
     {
+        if (elevatorData.status == ElevatorStatus.Arrived && request.newStatus == ElevatorStatus.Opening)
+        {
+            elevatorData.status = ElevatorStatus.Opening;
+            // Send both update status and update response to GUI
+            UpdateElevatorStatusResponse updateStatusRepsonse = new UpdateElevatorStatusResponse(ResultCode.Succeeded, elevatorData.status);
+            SendUpdateElevatorStatusResponse(updateStatusRepsonse);
+
+            UpdateElevatorResponse updateElevatorResponse = new UpdateElevatorResponse(elevatorData, 0);
+            SendUpdateElevatorResponse(updateElevatorResponse);
+        }
+
         if (elevatorData.status == ElevatorStatus.Opening && request.newStatus == ElevatorStatus.Opened)
         {
-            UpdateElevatorStatusResponse response = new UpdateElevatorStatusResponse();
-            response.resultCode = ResultCode.Succeeded;
-            response.elevatorData = elevatorData.DeepCopy();
+            elevatorData.status = ElevatorStatus.Opened;
+            UpdateElevatorStatusResponse response = new UpdateElevatorStatusResponse(ResultCode.Succeeded, elevatorData.status);
+            SendUpdateElevatorStatusResponse(response);
+        }
 
-            SendElevatorStatusUpdateResponse(response);
+        if (elevatorData.status == ElevatorStatus.Opened && request.newStatus == ElevatorStatus.Closing)
+        {
+            elevatorData.status = ElevatorStatus.Closing;
+            UpdateElevatorStatusResponse updateStatusResponse = new UpdateElevatorStatusResponse(ResultCode.Succeeded, elevatorData.status);
+            SendUpdateElevatorStatusResponse(updateStatusResponse);
+
+            UpdateElevatorResponse updateElevatorResponse = new UpdateElevatorResponse(elevatorData, 0);
+            SendUpdateElevatorResponse(updateElevatorResponse);
+        }
+
+        if (elevatorData.status == ElevatorStatus.Closing && request.newStatus == ElevatorStatus.Closed)
+        {
+            elevatorData.status = ElevatorStatus.Closed;
+            UpdateElevatorStatusResponse updateStatusResponse = new UpdateElevatorStatusResponse(ResultCode.Succeeded, elevatorData.status);
+            SendUpdateElevatorStatusResponse(updateStatusResponse);
+
+            UpdateElevator();
         }
     }
 
-    void SendElevatorStatusUpdateResponse(UpdateElevatorStatusResponse response)
+    void SendUpdateElevatorStatusResponse(UpdateElevatorStatusResponse response)
     {
         elevatorController?.OnGetElevatorStatusUpdateResponse(response);
         Logger.Log(Logger.kTagRes, "SendElevatorStatusUpdateResponse " + JsonUtility.ToJson(response));
@@ -285,17 +316,41 @@ public class TerminalController : MonoBehaviour
             }
         }
 
-        UpdateElevatorPositionResponse response = new UpdateElevatorPositionResponse();
-        response.resultCode = ResultCode.Succeeded;
-        response.newLevel = elevatorData.curFloorLevel;
+        // Elevator arrived
+        if (elevatorData.curFloorLevel == curDestFloor)
+        {
+            // Update floor status using elevator status
+            if (elevatorData.status == ElevatorStatus.MovingDown || elevatorData.status == ElevatorStatus.MovingUp)
+            {
+                FloorData floorData = GetFloorData(elevatorData.curFloorLevel);
+                floorData.OnElevatorArrived(elevatorData.GetDirection());
 
-        SendUpdateElevatorPositionResponse(response);
+                ElevatorArrivedResponse elevatorArrivedResponse = new ElevatorArrivedResponse(floorData);
+                SendElevatorArrivedResponse(elevatorArrivedResponse);
+            }
+
+            elevatorData.status = ElevatorStatus.Arrived;
+            UpdateElevatorResponse response = new UpdateElevatorResponse(elevatorData, 0);
+            SendUpdateElevatorResponse(response);
+            
+        }
+        else
+        {
+            UpdateElevatorPositionResponse response = new UpdateElevatorPositionResponse(ResultCode.Succeeded, elevatorData.curFloorLevel);
+            SendUpdateElevatorPositionResponse(response);
+        }
     }
 
     void SendUpdateElevatorPositionResponse(UpdateElevatorPositionResponse response)
     {
         elevatorController?.OnGetUpdateElevatorPositionResponse(response);
         Logger.Log(Logger.kTagRes, "SendUpdateElevatorPositionResponse " + JsonUtility.ToJson(response));
+    }
+
+    void SendElevatorArrivedResponse(ElevatorArrivedResponse response)
+    {
+        FloorController floorController = GetFloorController(response.floorData.level);
+        floorController?.OnGetElevatorArrivedResponse(response);
     }
 
     /// <summary>
@@ -336,7 +391,7 @@ public class TerminalController : MonoBehaviour
     {
         if (elevatorInterfaceController)
         {
-            elevatorInterfaceController.Show(OnGetCallRequest);
+            elevatorInterfaceController.Show(OnGetCallFloorRequest);
         }
     }
 }
