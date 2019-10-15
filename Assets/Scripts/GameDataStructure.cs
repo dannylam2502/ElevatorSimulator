@@ -94,7 +94,7 @@ public class FloorData
         return true;
     }
 
-    FloorStatus ConvertDirectionToFloorStatus(Direction direction)
+    public static FloorStatus ConvertDirectionToFloorStatus(Direction direction)
     {
         switch (direction)
         {
@@ -115,6 +115,11 @@ public class FloorData
     public void OnElevatorArrived(Direction direction)
     {
         status = status ^ ConvertDirectionToFloorStatus(direction);
+    }
+
+    public void OnElevatorArrived(FloorStatus floorStatus)
+    {
+        status = status ^ floorStatus;
     }
 }
 
@@ -138,22 +143,6 @@ public class ElevatorData
         other.curFloorLevel = curFloorLevel;
         other.listFloorsRequesting = new HashSet<uint>(listFloorsRequesting);
         return other;
-    }
-
-    public Direction GetDirection()
-    {
-        if (status == ElevatorStatus.MovingDown)
-        {
-            return Direction.Down;
-        }
-        else if (status == ElevatorStatus.MovingUp)
-        {
-            return Direction.Up;
-        }
-        else
-        {
-            return Direction.None;
-        }
     }
 }
 

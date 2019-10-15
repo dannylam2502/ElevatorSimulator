@@ -13,7 +13,10 @@ public class TerminalController : MonoBehaviour
     ElevatorController elevatorController;
     [ShowOnly]
     [SerializeField]
-    uint curDestFloor; // Tracking the floor to which elevator's going to move.
+    uint curDestFloor; // Tracks the floor to which elevator's going to move.
+    [ShowOnly]
+    [SerializeField]
+    Direction curElevatorDirection; // Tracks the direction elevator's moving.
 
     ElevatorInterfaceController elevatorInterfaceController;
 
@@ -26,6 +29,7 @@ public class TerminalController : MonoBehaviour
     private void Awake()
     {
         curDestFloor = 0;
+        curElevatorDirection = Direction.Down;
         floorData = new Dictionary<uint, FloorData>();
         for (uint i = 0; i < GameConfig.NumFloor; i++)
         {
@@ -145,67 +149,143 @@ public class TerminalController : MonoBehaviour
     void UpdateElevator()
     {
         // find the closest floor requested at current direction
-        uint curFloor = elevatorData.curFloorLevel;
-        if (elevatorData.status == ElevatorStatus.Waiting || elevatorData.status == ElevatorStatus.Closed)
+        if (elevatorData.status == ElevatorStatus.Waiting)
         {
-            FloorData floorData = GetFloorData(curFloor);
+            FloorData floorData = GetFloorData(elevatorData.curFloorLevel);
             if (floorData.status == FloorStatus.Waiting)
             {
+                // Current floor doesn't have request, let's find one in both direction
                 uint nextFloor = 0;
-                // Current floor doesn't have request, let's find one
-                for (uint upIndex = curFloor + 1, downIndex = curFloor - 1;
-                    upIndex <= GameConfig.GetTopFloor() || downIndex >= GameConfig.GetBottomFloor();
-                    upIndex++, downIndex--)
-                {
-                    FloorData upFloor = GetFloorData(upIndex);
-                    FloorData downFloor = GetFloorData(downIndex);
-                    // Prioritize going down
-                    if (downFloor != null)
-                    {
-                        if (downFloor.status == FloorStatus.RequestingDown)
-                        {
-                            nextFloor = downFloor.level;
-                            break;
-                        }
-                    }
-                    else if (upFloor != null)
-                    {
-                        if (upFloor.status == FloorStatus.RequestingDown)
-                        {
-                            nextFloor = upFloor.level;
-                            break;
-                        }
-                    }
-                }
+                nextFloor = FindNextRequestedFloor(Direction.Both);
                 if (nextFloor >= GameConfig.GetBottomFloor() && nextFloor <= GameConfig.GetTopFloor())
                 {
                     curDestFloor = nextFloor;
-                    // Update data
-                    elevatorData.status = curDestFloor > curFloor ? ElevatorStatus.MovingUp : ElevatorStatus.MovingDown;
+                    // Update elevator data and send response to GUI
+                    elevatorData.status = curDestFloor > elevatorData.curFloorLevel ? ElevatorStatus.MovingUp : ElevatorStatus.MovingDown;
                     float destinationY = GetFloorController(curDestFloor).GetFittedElevatorAnchoredPositionY();
                     UpdateElevatorResponse response = new UpdateElevatorResponse(elevatorData, destinationY);
-                    SendUpdateElevatorResponse(response);
-                }
-                else
-                {
-                    // No Request, waiting
-                    elevatorData.status = ElevatorStatus.Waiting;
-                    UpdateElevatorResponse response = new UpdateElevatorResponse(elevatorData, 0);
                     SendUpdateElevatorResponse(response);
                 }
             }
             else
             {
-                // Cur floor has request
-                elevatorData.status = ElevatorStatus.Opening;
-                floorData.OnElevatorArrived(elevatorData.GetDirection());
+                // Cur floor has request, sends response to floor
+                curElevatorDirection = floorData.status == FloorStatus.RequestingDown ? Direction.Down : Direction.Up;
+                floorData.OnElevatorArrived(curElevatorDirection);
                 SendElevatorArrivedResponse(new ElevatorArrivedResponse(floorData));
+                // Then sends response to elevator
+                elevatorData.status = ElevatorStatus.Opening;
+                UpdateElevatorResponse response = new UpdateElevatorResponse(elevatorData, 0);
+                SendUpdateElevatorResponse(response);
+            }
+        }
 
-                float destinationY = GetFloorController(curFloor).GetFittedElevatorAnchoredPositionY();
+        if (elevatorData.status == ElevatorStatus.Closed)
+        {
+            uint nextFloor = 0;
+            // Find next floor with current direction
+            nextFloor = FindNextRequestedFloor(curElevatorDirection);
+            if (nextFloor == 0)
+            {
+                // Cannot find any floor requested at cur direction, find other direction
+                nextFloor = FindNextRequestedFloor(Direction.Both ^ curElevatorDirection);
+            }
+
+            if (nextFloor == 0)
+            {
+                // No Request, waiting
+                elevatorData.status = ElevatorStatus.Waiting;
+                UpdateElevatorResponse response = new UpdateElevatorResponse(elevatorData, 0);
+                SendUpdateElevatorResponse(response);
+            }
+            else
+            {
+                // Update elevator data and send response to GUI
+                curDestFloor = nextFloor;
+                curElevatorDirection = curDestFloor > elevatorData.curFloorLevel ? Direction.Up : Direction.Down;
+                elevatorData.status = curDestFloor > elevatorData.curFloorLevel ? ElevatorStatus.MovingUp : ElevatorStatus.MovingDown;
+                float destinationY = GetFloorController(curDestFloor).GetFittedElevatorAnchoredPositionY();
                 UpdateElevatorResponse response = new UpdateElevatorResponse(elevatorData, destinationY);
                 SendUpdateElevatorResponse(response);
             }
         }
+    }
+
+    uint FindNextRequestedFloor(Direction direction)
+    {
+        uint nextFloor = 0;
+        if (direction == Direction.Down)
+        {
+            // same direction first, then other direction
+            for (uint i = elevatorData.curFloorLevel; i >= GameConfig.GetBottomFloor(); i--)
+            {
+                FloorData floorData = GetFloorData(i);
+                if (floorData.status == FloorStatus.RequestingDown)
+                {
+                    nextFloor = floorData.level;
+                    break;
+                }
+            }
+            for (uint i = elevatorData.curFloorLevel; i >= GameConfig.GetBottomFloor(); i--)
+            {
+                FloorData floorData = GetFloorData(i);
+                if (floorData.status == FloorStatus.RequestingUp)
+                {
+                    nextFloor = floorData.level;
+                    break;
+                }
+            }
+        }
+        else if (direction == Direction.Up)
+        {
+            // same direction first, then other direction
+            for (uint i = elevatorData.curFloorLevel; i <= GameConfig.GetTopFloor(); i++)
+            {
+                FloorData floorData = GetFloorData(i);
+                if (floorData.status == FloorStatus.RequestingUp)
+                {
+                    nextFloor = floorData.level;
+                    break;
+                }
+            }
+            for (uint i = elevatorData.curFloorLevel; i <= GameConfig.GetTopFloor(); i++)
+            {
+                FloorData floorData = GetFloorData(i);
+                if (floorData.status == FloorStatus.RequestingDown)
+                {
+                    nextFloor = floorData.level;
+                    break;
+                }
+            }
+        }
+        else if (direction == Direction.Both)
+        {
+            for (uint upIndex = elevatorData.curFloorLevel + 1, downIndex = elevatorData.curFloorLevel - 1;
+                    upIndex <= GameConfig.GetTopFloor() || downIndex >= GameConfig.GetBottomFloor();
+                    upIndex++, downIndex--)
+            {
+                FloorData upFloor = GetFloorData(upIndex);
+                FloorData downFloor = GetFloorData(downIndex);
+                // Prioritize going down
+                if (downFloor != null)
+                {
+                    if (downFloor.status != FloorStatus.Waiting)
+                    {
+                        nextFloor = downFloor.level;
+                        break;
+                    }
+                }
+                if (upFloor != null)
+                {
+                    if (upFloor.status != FloorStatus.Waiting)
+                    {
+                        nextFloor = upFloor.level;
+                        break;
+                    }
+                }
+            }
+        }
+        return nextFloor;
     }
 
     /// <summary>
@@ -214,7 +294,6 @@ public class TerminalController : MonoBehaviour
     void SendElevatorData()
     {
         GetElevatorDataResponse response = new GetElevatorDataResponse(elevatorData);
-
         SendElevatorDataResponse(response);
     }
 
@@ -323,7 +402,7 @@ public class TerminalController : MonoBehaviour
             if (elevatorData.status == ElevatorStatus.MovingDown || elevatorData.status == ElevatorStatus.MovingUp)
             {
                 FloorData floorData = GetFloorData(elevatorData.curFloorLevel);
-                floorData.OnElevatorArrived(elevatorData.GetDirection());
+                floorData.OnElevatorArrived(curElevatorDirection);
 
                 ElevatorArrivedResponse elevatorArrivedResponse = new ElevatorArrivedResponse(floorData);
                 SendElevatorArrivedResponse(elevatorArrivedResponse);
@@ -332,7 +411,6 @@ public class TerminalController : MonoBehaviour
             elevatorData.status = ElevatorStatus.Arrived;
             UpdateElevatorResponse response = new UpdateElevatorResponse(elevatorData, 0);
             SendUpdateElevatorResponse(response);
-            
         }
         else
         {
