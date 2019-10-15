@@ -363,7 +363,7 @@ public class TerminalController : MonoBehaviour
 
     void OnGetUpdateElevatorPositionRequest(UpdateElevatorPositionRequest request)
     {
-        Logger.Log(Logger.kTagReq, "OnGetUpdateElevatorPositionRequest " + JsonUtility.ToJson(request));
+        //Logger.Log(Logger.kTagReq, "OnGetUpdateElevatorPositionRequest " + JsonUtility.ToJson(request));
         HandleUpdateElevatorPositionRequest(request);
     }
 
@@ -422,7 +422,7 @@ public class TerminalController : MonoBehaviour
     void SendUpdateElevatorPositionResponse(UpdateElevatorPositionResponse response)
     {
         elevatorController?.OnGetUpdateElevatorPositionResponse(response);
-        Logger.Log(Logger.kTagRes, "SendUpdateElevatorPositionResponse " + JsonUtility.ToJson(response));
+        //Logger.Log(Logger.kTagRes, "SendUpdateElevatorPositionResponse " + JsonUtility.ToJson(response));
     }
 
     void SendElevatorArrivedResponse(ElevatorArrivedResponse response)
