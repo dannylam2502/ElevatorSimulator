@@ -28,7 +28,7 @@ public class TerminalController : MonoBehaviour
 
     private void Awake()
     {
-        curDestFloor = 0;
+        curDestFloor = GameConfig.kFloorInvalid;
         curElevatorDirection = Direction.Down;
         floorData = new Dictionary<uint, FloorData>();
         for (uint i = 0; i < GameConfig.NumFloor; i++)
@@ -75,6 +75,10 @@ public class TerminalController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (Input.GetKeyDown(KeyCode.T))
+        {
+            UpdateElevator();
+        }
     }
 
     void OnGetFloorRequest(CallElevatorRequest rq)
@@ -155,8 +159,8 @@ public class TerminalController : MonoBehaviour
             if (floorData.status == FloorStatus.Waiting)
             {
                 // Current floor doesn't have request, let's find one in both direction
-                uint nextFloor = 0;
-                nextFloor = FindNextRequestedFloor(Direction.Both);
+                uint nextFloor = GameConfig.kFloorInvalid;
+                nextFloor = FindNextRequestedFloor(Direction.Both, true);
                 if (nextFloor >= GameConfig.GetBottomFloor() && nextFloor <= GameConfig.GetTopFloor())
                 {
                     curDestFloor = nextFloor;
@@ -182,16 +186,17 @@ public class TerminalController : MonoBehaviour
 
         if (elevatorData.status == ElevatorStatus.Closed)
         {
-            uint nextFloor = 0;
+            uint nextFloor = GameConfig.kFloorInvalid;
             // Find next floor with current direction
-            nextFloor = FindNextRequestedFloor(curElevatorDirection);
-            if (nextFloor == 0)
+            nextFloor = FindNextRequestedFloor(curElevatorDirection, true);
+            if (nextFloor == GameConfig.kFloorInvalid)
             {
-                // Cannot find any floor requested at cur direction, find other direction
-                nextFloor = FindNextRequestedFloor(Direction.Both ^ curElevatorDirection);
+                // Cannot find any floor requested at cur direction, find other direction, include current floor as well
+                curElevatorDirection = curElevatorDirection == Direction.Down ? Direction.Up : Direction.Down;
+                nextFloor = FindNextRequestedFloor(curElevatorDirection, false);
             }
 
-            if (nextFloor == 0)
+            if (nextFloor == GameConfig.kFloorInvalid)
             {
                 // No Request, waiting
                 elevatorData.status = ElevatorStatus.Waiting;
@@ -202,8 +207,32 @@ public class TerminalController : MonoBehaviour
             {
                 // Update elevator data and send response to GUI
                 curDestFloor = nextFloor;
-                curElevatorDirection = curDestFloor > elevatorData.curFloorLevel ? Direction.Up : Direction.Down;
-                elevatorData.status = curDestFloor > elevatorData.curFloorLevel ? ElevatorStatus.MovingUp : ElevatorStatus.MovingDown;
+                elevatorData.status = curElevatorDirection == Direction.Up ? ElevatorStatus.MovingUp : ElevatorStatus.MovingDown;
+                float destinationY = GetFloorController(curDestFloor).GetFittedElevatorAnchoredPositionY();
+                UpdateElevatorResponse response = new UpdateElevatorResponse(elevatorData, destinationY);
+                SendUpdateElevatorResponse(response);
+            }
+        }
+
+        if (elevatorData.status == ElevatorStatus.MovingDown)
+        {
+            uint nextFloor = FindNextRequestedFloor(Direction.Down, true);
+            if (nextFloor > curDestFloor) // Found a floor requested on the way, but not current floor!
+            {
+                curDestFloor = nextFloor;
+                float destinationY = GetFloorController(curDestFloor).GetFittedElevatorAnchoredPositionY();
+                UpdateElevatorResponse response = new UpdateElevatorResponse(elevatorData, destinationY);
+                SendUpdateElevatorResponse(response);
+            }
+        }
+
+        if (elevatorData.status == ElevatorStatus.MovingUp)
+        {
+            uint nextFloor = FindNextRequestedFloor(Direction.Up, true);
+            if (nextFloor != GameConfig.kFloorInvalid &&
+                nextFloor < curDestFloor) // Found a floor requested on the way, but not current floor!
+            {
+                curDestFloor = nextFloor;
                 float destinationY = GetFloorController(curDestFloor).GetFittedElevatorAnchoredPositionY();
                 UpdateElevatorResponse response = new UpdateElevatorResponse(elevatorData, destinationY);
                 SendUpdateElevatorResponse(response);
@@ -211,56 +240,56 @@ public class TerminalController : MonoBehaviour
         }
     }
 
-    uint FindNextRequestedFloor(Direction direction)
+    uint FindNextRequestedFloor(Direction direction, bool isCurFloorExcluded)
     {
-        uint nextFloor = 0;
+        uint variable = 0;
+        if (isCurFloorExcluded)
+        {
+            variable = 1;
+        }
         if (direction == Direction.Down)
         {
             // same direction first, then other direction
-            for (uint i = elevatorData.curFloorLevel; i >= GameConfig.GetBottomFloor(); i--)
+            for (uint i = elevatorData.curFloorLevel - variable; i >= GameConfig.GetBottomFloor(); i--)
             {
                 FloorData floorData = GetFloorData(i);
-                if (floorData.status == FloorStatus.RequestingDown)
+                if (floorData.HasRequestDown())
                 {
-                    nextFloor = floorData.level;
-                    break;
+                    return floorData.level;
                 }
             }
-            for (uint i = elevatorData.curFloorLevel; i >= GameConfig.GetBottomFloor(); i--)
+            for (uint i = elevatorData.curFloorLevel - variable; i >= GameConfig.GetBottomFloor(); i--)
             {
                 FloorData floorData = GetFloorData(i);
-                if (floorData.status == FloorStatus.RequestingUp)
+                if (floorData.HasRequestUp())
                 {
-                    nextFloor = floorData.level;
-                    break;
+                    return floorData.level;
                 }
             }
         }
         else if (direction == Direction.Up)
         {
             // same direction first, then other direction
-            for (uint i = elevatorData.curFloorLevel; i <= GameConfig.GetTopFloor(); i++)
+            for (uint i = elevatorData.curFloorLevel + variable; i <= GameConfig.GetTopFloor(); i++)
             {
                 FloorData floorData = GetFloorData(i);
-                if (floorData.status == FloorStatus.RequestingUp)
+                if (floorData.HasRequestUp())
                 {
-                    nextFloor = floorData.level;
-                    break;
+                    return floorData.level;
                 }
             }
-            for (uint i = elevatorData.curFloorLevel; i <= GameConfig.GetTopFloor(); i++)
+            for (uint i = elevatorData.curFloorLevel + variable; i <= GameConfig.GetTopFloor(); i++)
             {
                 FloorData floorData = GetFloorData(i);
-                if (floorData.status == FloorStatus.RequestingDown)
+                if (floorData.HasRequestDown())
                 {
-                    nextFloor = floorData.level;
-                    break;
+                    return floorData.level;
                 }
             }
         }
         else if (direction == Direction.Both)
         {
-            for (uint upIndex = elevatorData.curFloorLevel + 1, downIndex = elevatorData.curFloorLevel - 1;
+            for (uint upIndex = elevatorData.curFloorLevel + variable, downIndex = elevatorData.curFloorLevel - variable;
                     upIndex <= GameConfig.GetTopFloor() || downIndex >= GameConfig.GetBottomFloor();
                     upIndex++, downIndex--)
             {
@@ -271,21 +300,19 @@ public class TerminalController : MonoBehaviour
                 {
                     if (downFloor.status != FloorStatus.Waiting)
                     {
-                        nextFloor = downFloor.level;
-                        break;
+                        return downFloor.level;
                     }
                 }
                 if (upFloor != null)
                 {
                     if (upFloor.status != FloorStatus.Waiting)
                     {
-                        nextFloor = upFloor.level;
-                        break;
+                        return upFloor.level;
                     }
                 }
             }
         }
-        return nextFloor;
+        return GameConfig.kFloorInvalid;
     }
 
     /// <summary>

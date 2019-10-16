@@ -9,9 +9,6 @@ public class ElevatorController : MonoBehaviour
     private Text txtCurFloor;
     [SerializeField]
     private Text txtCurStatus;
-    [ShowOnly]
-    [SerializeField]
-    private float curDestinationY;
     [SerializeField]
     private float speed = 30.0f;
     [SerializeField]
@@ -83,7 +80,6 @@ public class ElevatorController : MonoBehaviour
         {
             prevElevatorData = elevatorData;
             elevatorData = response.updatedElevatorData;
-            curDestinationY = response.destinationY;
 
             if (elevatorData.status == ElevatorStatus.Opening)
             {
@@ -93,7 +89,7 @@ public class ElevatorController : MonoBehaviour
             if (elevatorData.status == ElevatorStatus.MovingDown || elevatorData.status == ElevatorStatus.MovingUp)
             {
                 // Run coroutine
-                coroutineMovingElevator = StartCoroutine(RoutineMoving());
+                coroutineMovingElevator = StartCoroutine(RoutineMoving(response.destinationY));
             }
 
             if (elevatorData.status == ElevatorStatus.Arrived)
@@ -114,7 +110,7 @@ public class ElevatorController : MonoBehaviour
         }
     }
 
-    public IEnumerator RoutineMoving()
+    public IEnumerator RoutineMoving(float destinationY)
     {
         bool isFinished = false;
         Vector2 temp = rectTransform.anchoredPosition;
@@ -124,7 +120,7 @@ public class ElevatorController : MonoBehaviour
             if (elevatorData.status == ElevatorStatus.MovingDown)
             {
                 temp.y -= speed * Time.deltaTime;
-                if (temp.y <= curDestinationY)
+                if (temp.y <= destinationY)
                 {
                     isFinished = true;
                 }
@@ -132,7 +128,7 @@ public class ElevatorController : MonoBehaviour
             else if (elevatorData.status == ElevatorStatus.MovingUp)
             {
                 temp.y += speed * Time.deltaTime;
-                if (temp.y >= curDestinationY)
+                if (temp.y >= destinationY)
                 {
                     isFinished = true;
                 }
@@ -144,7 +140,7 @@ public class ElevatorController : MonoBehaviour
             onUpdateElevatorPositionCallback?.Invoke(request);
             yield return new WaitForEndOfFrame();
         }
-        temp.y = curDestinationY;
+        temp.y = destinationY;
         rectTransform.anchoredPosition = temp;
         
         yield return new WaitForEndOfFrame();

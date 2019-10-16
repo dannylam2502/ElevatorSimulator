@@ -114,12 +114,33 @@ public class FloorData
 
     public void OnElevatorArrived(Direction direction)
     {
-        status = status ^ ConvertDirectionToFloorStatus(direction);
+        if (status == FloorStatus.RequestingUpAndDown)
+        {
+            status = status ^ ConvertDirectionToFloorStatus(direction);
+        }
+        //else if (status == ConvertDirectionToFloorStatus(direction))
+        //{
+        //    status = FloorStatus.Waiting;
+        //}
+        else
+        {
+            status = FloorStatus.Waiting;
+        }
     }
 
     public void OnElevatorArrived(FloorStatus floorStatus)
     {
         status = status ^ floorStatus;
+    }
+
+    public bool HasRequestDown()
+    {
+        return (status & FloorStatus.RequestingDown) == FloorStatus.RequestingDown;
+    }
+
+    public bool HasRequestUp()
+    {
+        return (status & FloorStatus.RequestingUp) == FloorStatus.RequestingUp;
     }
 }
 
