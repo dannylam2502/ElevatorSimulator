@@ -128,11 +128,6 @@ public class FloorData
         }
     }
 
-    public void OnElevatorArrived(FloorStatus floorStatus)
-    {
-        status = status ^ floorStatus;
-    }
-
     public bool HasRequestDown()
     {
         return (status & FloorStatus.RequestingDown) == FloorStatus.RequestingDown;
@@ -141,6 +136,11 @@ public class FloorData
     public bool HasRequestUp()
     {
         return (status & FloorStatus.RequestingUp) == FloorStatus.RequestingUp;
+    }
+
+    public bool HasRequestAtDirection(Direction direction)
+    {
+        return (status & ConvertDirectionToFloorStatus(direction)) != FloorStatus.Waiting;
     }
 }
 

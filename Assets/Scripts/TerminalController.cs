@@ -75,7 +75,7 @@ public class TerminalController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.T))
+        if (Input.GetKeyDown(KeyCode.Q))
         {
             UpdateElevator();
         }
@@ -236,6 +236,36 @@ public class TerminalController : MonoBehaviour
                 float destinationY = GetFloorController(curDestFloor).GetFittedElevatorAnchoredPositionY();
                 UpdateElevatorResponse response = new UpdateElevatorResponse(elevatorData, destinationY);
                 SendUpdateElevatorResponse(response);
+            }
+        }
+
+        if (elevatorData.status == ElevatorStatus.Closing)
+        {
+            // Got Requested from current floor while closing
+            FloorData floorData = GetFloorData(elevatorData.curFloorLevel);
+            if (floorData.HasRequestAtDirection(curElevatorDirection))
+            {
+                elevatorData.status = ElevatorStatus.Opening;
+                UpdateElevatorResponse updateElevatorResponse = new UpdateElevatorResponse(elevatorData, 0);
+                SendUpdateElevatorResponse(updateElevatorResponse);
+
+                // Update floor status too
+                floorData.OnElevatorArrived(curElevatorDirection);
+                ElevatorArrivedResponse elevatorArrivedResponse = new ElevatorArrivedResponse(floorData);
+                SendElevatorArrivedResponse(elevatorArrivedResponse);
+            }
+        }
+
+        if (elevatorData.status == ElevatorStatus.Opened || elevatorData.status == ElevatorStatus.Opening)
+        {
+            // Got Requested from current floor, then tell it we've arrived
+            FloorData floorData = GetFloorData(elevatorData.curFloorLevel);
+            if (floorData.HasRequestAtDirection(curElevatorDirection))
+            {
+                // Update floor status too
+                floorData.OnElevatorArrived(curElevatorDirection);
+                ElevatorArrivedResponse elevatorArrivedResponse = new ElevatorArrivedResponse(floorData);
+                SendElevatorArrivedResponse(elevatorArrivedResponse);
             }
         }
     }

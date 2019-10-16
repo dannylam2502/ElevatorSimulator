@@ -5,7 +5,7 @@ using UnityEngine;
 public class GameConfig : MonoBehaviour
 {
     public static uint NumFloor = 100;
-    public static uint NumElevator = 10;
+    public static uint NumElevator = 1;
     public const uint kBottomFloor = 1;
     public const float kTimeWaitBeforeElevatorSendRequest = 1.0f;
     public const uint kFloorInvalid = 0;

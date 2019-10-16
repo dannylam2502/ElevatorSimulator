@@ -17,6 +17,9 @@ public class DoorController : MonoBehaviour
     Callback onDoorClosed;
 
     public const string kStateKey = "State";
+    public const int kStateIdle = 0;
+    public const int kStateOpening = 1;
+    public const int kStateClosing = 2;
     // Start is called before the first frame update
     void Start()
     {
@@ -40,19 +43,19 @@ public class DoorController : MonoBehaviour
 
     public void Open(Callback onDoorOpenedCallback)
     {
-        animator.SetInteger(kStateKey, 1);
+        animator.SetInteger(kStateKey, kStateOpening);
         onDoorOpened = onDoorOpenedCallback;
     }
 
     public void Close(Callback onDoorClosedCallback)
     {
-        animator.SetInteger(kStateKey, 2);
+        animator.SetInteger(kStateKey, kStateClosing);
         onDoorClosed = onDoorClosedCallback;
     }
 
     public void Idle()
     {
-        animator.SetInteger(kStateKey, 0);
+        animator.SetInteger(kStateKey, kStateIdle);
     }
 
     void OnEndOpenAnimation()

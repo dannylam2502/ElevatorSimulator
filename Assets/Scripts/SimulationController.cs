@@ -22,8 +22,7 @@ public class SimulationController : MonoBehaviour
 
     IEnumerator RoutineCreateTerminal()
     {
-        uint numTerminal = 10;
-        for (uint i = 0; i < numTerminal; i++)
+        for (uint i = 0; i < GameConfig.NumElevator; i++)
         {
             GameObject terminal = Instantiate(pfTerminal, terminalLayout.transform);
             terminal.name = "Terminal" + i.ToString();
