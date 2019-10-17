@@ -26,38 +26,31 @@ public class CameraController : MonoBehaviour
         edge.height = Screen.height * 0.6f;
     }
 
-    //void Update()
-    //{
-    //    if (cameraRef != null)
-    //    {
-    //        mouseX = Input.mousePosition.x;
-    //        mouseY = Input.mousePosition.y;
+    void Update()
+    {
+        if (Input.GetKey(KeyCode.RightArrow))
+        {
+            transform.Translate(new Vector3(speed * Time.deltaTime, 0, 0));
+        }
+        if (Input.GetKey(KeyCode.LeftArrow))
+        {
+            transform.Translate(new Vector3(-speed * Time.deltaTime, 0, 0));
+        }
+        if (Input.GetKey(KeyCode.DownArrow))
+        {
+            transform.Translate(new Vector3(0, -speed * Time.deltaTime, 0));
+        }
+        if (Input.GetKey(KeyCode.UpArrow))
+        {
+            transform.Translate(new Vector3(0, speed * Time.deltaTime, 0));
+        }
+    }
 
-    //        if (mouseY > Screen.height * 1.2) // cheat out of screen, I'm working in editor
-    //        {
-    //            return;
-    //        }
-
-    //        //Debug.LogFormat("MouseX = {0}, MouseY = {1}", Input.mousePosition.x, Input.mousePosition.y);
-
-    //        if (mouseX < edge.x)
-    //        {
-    //            newCamPos.x -= Time.deltaTime * speed;
-    //        }
-    //        else if (mouseX > edge.xMax)
-    //        {
-    //            newCamPos.x += Time.deltaTime * speed;
-    //        }
-
-    //        if (mouseY < edge.y)
-    //        {
-    //            newCamPos.y -= Time.deltaTime * speed;
-    //        }
-    //        else if (mouseY > edge.yMax)
-    //        {
-    //            newCamPos.y += Time.deltaTime * speed;
-    //        }
-    //        cameraRef.transform.position = newCamPos;
-    //    }
-    //}
+    public void OnClickResetCamera()
+    {
+        Vector3 position = cameraRef.transform.position;
+        position.x = 0;
+        position.y = 0;
+        cameraRef.transform.position = position;
+    }
 }

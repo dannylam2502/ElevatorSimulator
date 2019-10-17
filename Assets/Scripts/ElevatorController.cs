@@ -10,7 +10,7 @@ public class ElevatorController : MonoBehaviour
     [SerializeField]
     private Text txtCurStatus;
     [SerializeField]
-    private float speed = 30.0f;
+    private float speed = 50.0f;
     [SerializeField]
     private DoorController doorController;
 

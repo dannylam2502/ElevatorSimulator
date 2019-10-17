@@ -11,6 +11,8 @@ public class TerminalController : MonoBehaviour
     GameObject pfFloor;
     [SerializeField]
     ElevatorController elevatorController;
+    [SerializeField]
+    Text txtNum;
     [ShowOnly]
     [SerializeField]
     uint curDestFloor; // Tracks the floor to which elevator's going to move.
@@ -19,7 +21,7 @@ public class TerminalController : MonoBehaviour
     Direction curElevatorDirection; // Tracks the direction elevator's moving.
     [ShowOnly]
     [SerializeField]
-    uint terminalNum;
+    uint Num;
 
     ElevatorInterfaceController elevatorInterfaceController;
 
@@ -93,9 +95,10 @@ public class TerminalController : MonoBehaviour
 
     public void SetData(uint terminalNum)
     {
-        this.terminalNum = terminalNum;
-        logTagReq = string.Format("Terminal {0}, {1}", this.terminalNum.ToString(), Logger.kTagReq);
-        logTagRes = string.Format("Terminal {0}, {1}", this.terminalNum.ToString(), Logger.kTagRes);
+        this.Num = terminalNum;
+        txtNum.text = Num.ToString();
+        logTagReq = string.Format("Terminal {0}, {1}", this.Num.ToString(), Logger.kTagReq);
+        logTagRes = string.Format("Terminal {0}, {1}", this.Num.ToString(), Logger.kTagRes);
     }
 
     void OnGetCallElevatorRequest(CallElevatorRequest rq)
@@ -158,7 +161,7 @@ public class TerminalController : MonoBehaviour
 
     void SendCallFloorResponse(CallFloorResponse response)
     {
-        if (elevatorInterfaceController.GetCurTerminalNum() == terminalNum && elevatorInterfaceController.IsShow())
+        if (elevatorInterfaceController.GetCurTerminalNum() == Num && elevatorInterfaceController.IsShow())
         {
             elevatorInterfaceController.OnGetCallFloorResponse(response);
         }
@@ -589,7 +592,22 @@ public class TerminalController : MonoBehaviour
     {
         if (elevatorInterfaceController)
         {
-            elevatorInterfaceController.Show(terminalNum, listFloorsRequesting, OnGetCallFloorRequest);
+            Vector2 position = elevatorController.transform.position;
+            elevatorInterfaceController.Show(Num, listFloorsRequesting, position, OnGetCallFloorRequest);
         }
     }
+
+    #region Stimulation's functions section
+    public void FakeOnGetCallElevatorRequest(CallElevatorRequest rq)
+    {
+        Logger.Log(logTagReq, "FakeOnGetCallElevatorRequest " + JsonUtility.ToJson(rq));
+        HandleCallElevatorRequest(rq);
+    }
+
+    public void FakeOnGetCallFloorRequest(CallFloorRequest request)
+    {
+        Logger.Log(logTagReq, "FakeOnGetCallFloorRequest " + JsonUtility.ToJson(request));
+        HandleCallFloorRequest(request);
+    }
+    #endregion
 }

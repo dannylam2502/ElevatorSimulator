@@ -11,6 +11,8 @@ public class ElevatorInterfaceController : MonoBehaviour
     GameObject pfCallBtn;
     [SerializeField]
     GridLayoutGroup layoutFloorBtn;
+    [SerializeField]
+    Text txtTitle;
 
     OnCallFloorRequestCallback onCallRequestCallback;
 
@@ -37,7 +39,10 @@ public class ElevatorInterfaceController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            Hide();
+        }
     }
 
     public bool IsShow()
@@ -50,12 +55,24 @@ public class ElevatorInterfaceController : MonoBehaviour
         return curTerminalNum;
     }
 
-    public void Show(uint terminalNum, HashSet<uint> listFloorsRequesting, OnCallFloorRequestCallback callback)
+    public void Show(uint terminalNum, HashSet<uint> listFloorsRequesting, Vector2 position, OnCallFloorRequestCallback callback)
     {
         curTerminalNum = terminalNum;
         content.SetActive(true);
         UpdateUI(listFloorsRequesting);
         onCallRequestCallback = callback;
+
+        // prevent out of camera
+        if (position.y > 0)
+        {
+            position.y = 0;
+        }
+
+        if (position.x < 0)
+        {
+            position.x = 0;
+        }
+        transform.position = position;
     }
 
     public void Hide()
@@ -99,6 +116,7 @@ public class ElevatorInterfaceController : MonoBehaviour
             CallButtonController controller = GetButtonController(item);
             controller.SetSelected(true);
         }
+        txtTitle.text = string.Format("Terminal {0}", curTerminalNum);
     }
 
     public void OnGetElevatorArrivedResponse(ElevatorArrivedResponse response)
