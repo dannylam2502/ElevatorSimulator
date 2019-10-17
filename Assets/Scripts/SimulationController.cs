@@ -8,8 +8,6 @@ public class SimulationController : MonoBehaviour
     [SerializeField]
     HorizontalLayoutGroup terminalLayout;
     [SerializeField]
-    InputField inputFieldTerminalNum;
-    [SerializeField]
     GameObject pfTerminal;
     [SerializeField]
     ElevatorInterfaceController elevatorInterfaceController;
