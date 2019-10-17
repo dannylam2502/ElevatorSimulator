@@ -177,3 +177,18 @@ public class ElevatorArrivedResponse
         this.floorData = floorData?.DeepCopy();
     }
 }
+
+[SerializeField]
+public class ElevatorStatusResponse
+{
+    public uint curLevel;
+    public Direction curDirection;
+
+    private ElevatorStatusResponse() { }
+
+    public ElevatorStatusResponse(uint level, Direction direction)
+    {
+        curLevel = level;
+        curDirection = direction;
+    }
+}

@@ -70,6 +70,7 @@ public class TerminalController : MonoBehaviour
         elevatorController.SetUpdateElevatorPositionCallback(OnGetUpdateElevatorPositionRequest);
 
         SendElevatorData();
+        SendElevatorStatusResponseToAllFloor();
     }
 
     // Update is called once per frame
@@ -211,6 +212,8 @@ public class TerminalController : MonoBehaviour
                 float destinationY = GetFloorController(curDestFloor).GetFittedElevatorAnchoredPositionY();
                 UpdateElevatorResponse response = new UpdateElevatorResponse(elevatorData, destinationY);
                 SendUpdateElevatorResponse(response);
+                // Update Elevator Status
+                SendElevatorStatusResponseToAllFloor();
             }
         }
 
@@ -249,7 +252,7 @@ public class TerminalController : MonoBehaviour
                 UpdateElevatorResponse updateElevatorResponse = new UpdateElevatorResponse(elevatorData, 0);
                 SendUpdateElevatorResponse(updateElevatorResponse);
 
-                // Update floor status too
+                // Update floor status
                 floorData.OnElevatorArrived(curElevatorDirection);
                 ElevatorArrivedResponse elevatorArrivedResponse = new ElevatorArrivedResponse(floorData);
                 SendElevatorArrivedResponse(elevatorArrivedResponse);
@@ -262,7 +265,7 @@ public class TerminalController : MonoBehaviour
             FloorData floorData = GetFloorData(elevatorData.curFloorLevel);
             if (floorData.HasRequestAtDirection(curElevatorDirection))
             {
-                // Update floor status too
+                // Update floor status
                 floorData.OnElevatorArrived(curElevatorDirection);
                 ElevatorArrivedResponse elevatorArrivedResponse = new ElevatorArrivedResponse(floorData);
                 SendElevatorArrivedResponse(elevatorArrivedResponse);
@@ -436,6 +439,8 @@ public class TerminalController : MonoBehaviour
                 if (request.positionY <= floorController.GetFittedElevatorAnchoredPositionY())
                 {
                     elevatorData.curFloorLevel = nextFloor;
+                    // Update elevator status
+                    SendElevatorStatusResponseToAllFloor();
                 }
             }
         }
@@ -448,6 +453,8 @@ public class TerminalController : MonoBehaviour
                 if (request.positionY >= floorController.GetFittedElevatorAnchoredPositionY())
                 {
                     elevatorData.curFloorLevel = nextFloor;
+                    // Update elevator status
+                    SendElevatorStatusResponseToAllFloor();
                 }
             }
         }
@@ -486,6 +493,20 @@ public class TerminalController : MonoBehaviour
     {
         FloorController floorController = GetFloorController(response.floorData.level);
         floorController?.OnGetElevatorArrivedResponse(response);
+    }
+
+    /// <summary>
+    /// Update elevator status to all floor
+    /// </summary>
+    void SendElevatorStatusResponseToAllFloor()
+    {
+        // All of floor share the same msg for now.
+        ElevatorStatusResponse response = new ElevatorStatusResponse(elevatorData.curFloorLevel, curElevatorDirection);
+        for (uint i = GameConfig.GetBottomFloor(); i <= GameConfig.GetTopFloor(); i++)
+        {
+            FloorController floorController = GetFloorController(i);
+            floorController?.OnGetElevatorStatusResponse(response);
+        }
     }
 
     /// <summary>

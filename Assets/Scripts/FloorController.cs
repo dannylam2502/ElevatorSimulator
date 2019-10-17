@@ -8,6 +8,8 @@ public class FloorController : MonoBehaviour
     [SerializeField]
     Text txtFloorLevel;
     [SerializeField]
+    Text txtElevatorStatus;
+    [SerializeField]
     Button btnUp;
     [SerializeField]
     Button btnDown;
@@ -24,12 +26,6 @@ public class FloorController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
     }
 
     public void SetFloorData(FloorData data)
@@ -122,5 +118,10 @@ public class FloorController : MonoBehaviour
     {
         floorData = response.floorData;
         UpdateUI();
+    }
+
+    public void OnGetElevatorStatusResponse(ElevatorStatusResponse response)
+    {
+        txtElevatorStatus.text = string.Format("Floor {0}, {1}", response.curLevel.ToString(), response.curDirection == Direction.Down ? "Down" : "Up");
     }
 }
