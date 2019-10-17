@@ -15,6 +15,7 @@ public class ElevatorInterfaceController : MonoBehaviour
     OnCallFloorRequestCallback onCallRequestCallback;
 
     Dictionary<uint, CallButtonController> dictCallBtnController;
+    uint curTerminalNum; // We only use 1 UI for displaying this in entire game, so we need to know which terminal it's showing
     
     // Start is called before the first frame update
     void Start()
@@ -39,9 +40,21 @@ public class ElevatorInterfaceController : MonoBehaviour
         
     }
 
-    public void Show(OnCallFloorRequestCallback callback)
+    public bool IsShow()
     {
+        return content.activeInHierarchy;
+    }
+
+    public uint GetCurTerminalNum()
+    {
+        return curTerminalNum;
+    }
+
+    public void Show(uint terminalNum, HashSet<uint> listFloorsRequesting, OnCallFloorRequestCallback callback)
+    {
+        curTerminalNum = terminalNum;
         content.SetActive(true);
+        UpdateUI(listFloorsRequesting);
         onCallRequestCallback = callback;
     }
 
@@ -75,12 +88,22 @@ public class ElevatorInterfaceController : MonoBehaviour
     {
         if (response.resultCode == ResultCode.Succeeded)
         {
-            CallButtonController controller = GetButtonController(response.levelRequested);
-            if (controller)
-            {
-                controller.SetSelected(true);
-            }
+            UpdateUI(response.listFloorsRequesting);
         }
+    }
+
+    void UpdateUI(HashSet<uint> listFloorsRequesting)
+    {
+        foreach (var item in listFloorsRequesting)
+        {
+            CallButtonController controller = GetButtonController(item);
+            controller.SetSelected(true);
+        }
+    }
+
+    public void OnGetElevatorArrivedResponse(ElevatorArrivedResponse response)
+    {
+        GetButtonController(response.floorData.level)?.SetSelected(false);
     }
 
     /// <summary>

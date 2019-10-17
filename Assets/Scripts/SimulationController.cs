@@ -22,13 +22,14 @@ public class SimulationController : MonoBehaviour
 
     IEnumerator RoutineCreateTerminal()
     {
-        for (uint i = 0; i < GameConfig.NumElevator; i++)
+        for (uint i = 1; i <= GameConfig.NumElevator; i++)
         {
             GameObject terminal = Instantiate(pfTerminal, terminalLayout.transform);
             terminal.name = "Terminal" + i.ToString();
             TerminalController component = terminal.GetComponent<TerminalController>();
             if (component)
             {
+                component.SetData(i);
                 component.SetElevatorInterface(elevatorInterfaceController);
             }
             yield return new WaitForSeconds(0.2f);

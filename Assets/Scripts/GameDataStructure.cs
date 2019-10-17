@@ -149,20 +149,17 @@ public class ElevatorData
 {
     public ElevatorStatus status;
     public uint curFloorLevel;
-    public HashSet<uint> listFloorsRequesting;
 
     public ElevatorData()
     {
         status = ElevatorStatus.Waiting;
         curFloorLevel = GameConfig.GetTopFloor();
-        listFloorsRequesting = new HashSet<uint>();
     }
 
     public ElevatorData DeepCopy()
     {
         ElevatorData other = (ElevatorData)this.MemberwiseClone();
         other.curFloorLevel = curFloorLevel;
-        other.listFloorsRequesting = new HashSet<uint>(listFloorsRequesting);
         return other;
     }
 }

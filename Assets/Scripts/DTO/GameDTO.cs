@@ -69,14 +69,14 @@ public class CallFloorRequest
 public class CallFloorResponse
 {
     public ResultCode resultCode;
-    public uint levelRequested;
+    public HashSet<uint> listFloorsRequesting;
 
     private CallFloorResponse() { }
 
-    public CallFloorResponse(ResultCode resultCode, uint levelRequested)
+    public CallFloorResponse(ResultCode resultCode, HashSet<uint> listFloorsRequesting)
     {
         this.resultCode = resultCode;
-        this.levelRequested = levelRequested;
+        this.listFloorsRequesting = new HashSet<uint>(listFloorsRequesting);
     }
 }
 
