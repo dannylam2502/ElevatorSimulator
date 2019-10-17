@@ -16,13 +16,14 @@ public class SimulationController : MonoBehaviour
     [SerializeField]
     float SpeedSendRequest = 0.5f;
     [SerializeField]
-    bool IsStimulating = true;
+    bool IsStimulating = false;
 
     List<TerminalController> terminalControllers;
 
     private void Awake()
     {
         terminalControllers = new List<TerminalController>((int)GameConfig.NumElevator);
+        IsStimulating = false;
     }
     // Start is called before the first frame update
     void Start()
