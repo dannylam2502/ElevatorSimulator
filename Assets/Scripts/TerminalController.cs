@@ -311,7 +311,7 @@ public class TerminalController : MonoBehaviour
                     return floorData.level;
                 }
             }
-            for (uint i = elevatorData.curFloorLevel - variable; i >= GameConfig.GetBottomFloor(); i--)
+            for (uint i = GameConfig.GetBottomFloor(); i <= elevatorData.curFloorLevel - variable; i++)
             {
                 FloorData floorData = GetFloorData(i);
                 if (floorData.HasRequestUp())
@@ -331,7 +331,7 @@ public class TerminalController : MonoBehaviour
                     return floorData.level;
                 }
             }
-            for (uint i = elevatorData.curFloorLevel + variable; i <= GameConfig.GetTopFloor(); i++)
+            for (uint i = GameConfig.GetTopFloor(); i >= elevatorData.curFloorLevel + variable; i--)
             {
                 FloorData floorData = GetFloorData(i);
                 if (floorData.HasRequestDown())
