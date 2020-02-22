@@ -8,7 +8,7 @@ Note:
 - The project works fine (60fps) if numElevator * numFloor < 1000 on my computer.
 - Use Arrows to move the camera.
 - Check stimuate to control the stimulation.
-- You can reset camera to starting position by click the bottom in the bottom right corner.
+- You can reset camera to starting position by click the button in the bottom right corner.
 
 Feel free to comment or reach out to me at dannylam2502@gmail.com.
 
